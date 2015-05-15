@@ -39,7 +39,7 @@ http://godoc.org/github.com/square/inspect/metrics
 
 ./bin/inspect (run as root for IO statistics on Linux)
 
-![](https://github.com/square/inspect/inspect/blob/master/screenshots/summary.png)
+![](https://raw.githubusercontent.com/square/inspect/master/inspect/screenshots/summary.png)
 
 ###### Server 
 
