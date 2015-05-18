@@ -14,20 +14,10 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
-type TCPStat struct {
-	Metrics *TCPStatMetrics
-	m       *metrics.MetricContext
-}
-
-func New(m *metrics.MetricContext, Step time.Duration) *TCPStat {
-	s := new(TCPStat)
-	s.Metrics = NewTCPStatMetrics(m, Step)
-	return s
-}
-
+// TCPStat represents statistics about various tcp indicators
+// and is automatically initialized.
 // Caution: reflection is used to read this struct to discover names
-// Do not add new types
-type TCPStatMetrics struct {
+type TCPStat struct {
 	MaxConn      *metrics.Gauge
 	ActiveOpens  *metrics.Counter
 	PassiveOpens *metrics.Counter
@@ -39,14 +29,15 @@ type TCPStatMetrics struct {
 	RetransSegs  *metrics.Counter
 	InErrs       *metrics.Counter
 	OutRsts      *metrics.Counter
-	Extended     *TCPStatExtendedMetrics
-	//
+	Extended     *ExtendedMetrics
+	// not exported
 	m *metrics.MetricContext
 }
 
+// ExtendedMetrics represents extended statistics about various tcp indicators
+// and is automatically initialized.
 // Caution: reflection is used to read this struct to discover names
-// Do not add new types
-type TCPStatExtendedMetrics struct {
+type ExtendedMetrics struct {
 	SyncookiesSent   *metrics.Counter
 	SyncookiesRecv   *metrics.Counter
 	SyncookiesFailed *metrics.Counter
@@ -54,26 +45,29 @@ type TCPStatExtendedMetrics struct {
 	ListenDrops      *metrics.Counter
 }
 
-func NewTCPStatMetrics(m *metrics.MetricContext, Step time.Duration) *TCPStatMetrics {
-	c := new(TCPStatMetrics)
-	c.m = m
-	c.Extended = new(TCPStatExtendedMetrics)
+// New starts metrics collection every Step and registers with
+// metricscontext
+func New(m *metrics.MetricContext, Step time.Duration) *TCPStat {
+	s := new(TCPStat)
+	s.m = m
+	s.Extended = new(ExtendedMetrics)
 	// initialize all metrics and register them
-	misc.InitializeMetrics(c, m, "tcpstat", true)
-	misc.InitializeMetrics(c.Extended, m, "tcpstat.ext", true)
+	misc.InitializeMetrics(s, m, "tcpstat", true)
+	misc.InitializeMetrics(s.Extended, m, "tcpstat.ext", true)
 	// collect once
-	c.Collect()
+	s.Collect()
 	// collect metrics every Step
 	ticker := time.NewTicker(Step)
 	go func() {
 		for _ = range ticker.C {
-			c.Collect()
+			s.Collect()
 		}
 	}()
-	return c
+	return s
 }
 
-func (s *TCPStatMetrics) Collect() {
+// Collect populates TCPStat by reading /proc/net/snmp and /proc/net/netstat
+func (s *TCPStat) Collect() {
 	populateMetrics(s.m, s, "/proc/net/snmp", "Tcp:")
 	populateMetrics(s.m, s.Extended, "/proc/net/netstat", "TcpExt:")
 }
