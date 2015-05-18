@@ -1,6 +1,6 @@
 // Copyright (c) 2014 Square, Inc
 
-// Package interfacestat implements metrics collection related to network interfaces
+// Package interfacestat implements metrics Collection related to network interfaces
 package interfacestat
 
 import (
@@ -16,11 +16,15 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
+// InterfaceStat represents statistics about all interfaces
 type InterfaceStat struct {
 	Interfaces map[string]*PerInterfaceStat
 	m          *metrics.MetricContext
 }
 
+// New starts Collection of statistics for all interfaces on
+// the host refreshing per every Step. Metric Collection is
+// performed in a goroutine.
 func New(m *metrics.MetricContext, Step time.Duration) *InterfaceStat {
 	s := new(InterfaceStat)
 	s.Interfaces = make(map[string]*PerInterfaceStat, 4)
@@ -36,8 +40,9 @@ func New(m *metrics.MetricContext, Step time.Duration) *InterfaceStat {
 	return s
 }
 
-// Collect() collects interface metrics
-// TODO: perhaps use sysfs
+// Collect reads /proc/net/dev to gather statistics for interfaces.
+// Collect reads /sysfs to figure out interface capabilities.
+// Collect is generally called directly when the package is initialized.
 func (s *InterfaceStat) Collect() {
 	file, err := os.Open("/proc/net/dev")
 	defer file.Close()
@@ -92,7 +97,7 @@ func (s *InterfaceStat) Collect() {
 	}
 }
 
-// Return list of disks sorted by Usage
+// ByUsage represents list of interfaces sorted by Usage
 type ByUsage []*PerInterfaceStat
 
 func (a ByUsage) Len() int      { return len(a) }
@@ -101,11 +106,11 @@ func (a ByUsage) Less(i, j int) bool {
 	return (a[i].RXBandwidth() + a[i].TXBandwidth()) > (a[j].RXBandwidth() + a[j].TXBandwidth())
 }
 
-// ByUsage() returns an slice of *PerInterfaceStat entries sorted
+// ByUsage returns an slice of *PerInterfaceStat entries sorted
 // by usage
-func (c *InterfaceStat) ByUsage() []*PerInterfaceStat {
-	v := make([]*PerInterfaceStat, 0)
-	for _, o := range c.Interfaces {
+func (s *InterfaceStat) ByUsage() []*PerInterfaceStat {
+	var v []*PerInterfaceStat
+	for _, o := range s.Interfaces {
 		if !math.IsNaN(o.TXBandwidth()) && !math.IsNaN(o.RXBandwidth()) {
 			v = append(v, o)
 		}
@@ -114,13 +119,15 @@ func (c *InterfaceStat) ByUsage() []*PerInterfaceStat {
 	return v
 }
 
+// PerInterfaceStat represents statistics Collected for a single interface
 type PerInterfaceStat struct {
 	Metrics *PerInterfaceStatMetrics
 	m       *metrics.MetricContext
 	Name    string
 }
 
-// bytes    packets errs drop fifo frame compressed multicast
+// PerInterfaceStatMetrics represents statistics automatically initialized
+// per interface
 type PerInterfaceStatMetrics struct {
 	RXbytes      *metrics.Counter
 	RXpackets    *metrics.Counter
@@ -141,6 +148,8 @@ type PerInterfaceStatMetrics struct {
 	Speed        *metrics.Gauge
 }
 
+// NewPerInterfaceStat initializes and registers metrics with metriccontext
+// for an interface
 func NewPerInterfaceStat(m *metrics.MetricContext, dev string) *PerInterfaceStat {
 	c := new(PerInterfaceStat)
 	c.Name = dev
@@ -150,30 +159,32 @@ func NewPerInterfaceStat(m *metrics.MetricContext, dev string) *PerInterfaceStat
 	return c
 }
 
-// Recieve bandwidth utilization in bits/sec
+// RXBandwidth returns amount of bits/s received
 func (s *PerInterfaceStat) RXBandwidth() float64 {
 	o := s.Metrics
 	return (o.RXbytes.ComputeRate()) * 8
 }
 
-// Transmit bandwidth utilization in bits/sec
+// TXBandwidth returns amount of bits/s transmitted
 func (s *PerInterfaceStat) TXBandwidth() float64 {
 	o := s.Metrics
 	return (o.TXbytes.ComputeRate()) * 8
 }
 
-// Speed of interface in bits/sec
+// Speed returns interface speed of interface in bits/sec
 func (s *PerInterfaceStat) Speed() float64 {
 	o := s.Metrics
 	return o.Speed.Get() * 1024 * 1024 // ethtool interface seems to report in Mb
 }
 
-// Recieve bandwidth usage as percentage
+// RXBandwidthUsage returns received bandwidth usage as percentage relative to Speed
+// TODO: Add detection for full/half duplex. Full duplex is assumed currently.
 func (s *PerInterfaceStat) RXBandwidthUsage() float64 {
 	return (s.RXBandwidth() / s.Speed()) * 100
 }
 
-// Transmit bandwidth usage as percentage
+// TXBandwidthUsage returns transmitted bandwidth usage as percentage relative to Speed
+// TODO: Add detection for full/half duplex. Full duplex is assumed currently.
 func (s *PerInterfaceStat) TXBandwidthUsage() float64 {
 	return (s.TXBandwidth() / s.Speed()) * 100
 }
