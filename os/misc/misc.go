@@ -18,8 +18,11 @@ import (
 	"github.com/square/inspect/metrics"
 )
 
+// Interface represents an empty interface
 type Interface interface{}
 
+// ParseUint extracts an unsigned integer from input and returns it. Zero
+// is returned on error.
 func ParseUint(in string) uint64 {
 	out, err := strconv.ParseUint(in, 10, 64) // decimal, 64bit
 	if err != nil {
@@ -28,6 +31,8 @@ func ParseUint(in string) uint64 {
 	return out
 }
 
+// ParseFloat extracts a float64 number from input and returns it. math.NaN()
+// is returned on error.
 func ParseFloat(in string) float64 {
 	out, err := strconv.ParseFloat(in, 64) // float, 64bit
 	if err != nil {
@@ -36,6 +41,8 @@ func ParseFloat(in string) float64 {
 	return out
 }
 
+// ReadUintFromFile extracts an unsigned integer from specified file input. Zero
+// is returned on error.
 func ReadUintFromFile(path string) uint64 {
 	f, err := os.Open(path)
 	defer f.Close()
@@ -109,6 +116,8 @@ func SetMetrics(m *metrics.MetricContext, s Interface, keys []string, values []s
 	}
 }
 
+// unexported
+
 // find if the metric name we have is present in data we just parsed
 func extractValue(name string, keys []string, values []string) (string, error) {
 	idx := 0
@@ -142,9 +151,9 @@ func UnregisterMetrics(c Interface, m *metrics.MetricContext, prefix string) {
 	return
 }
 
-// move these to cgroup library
-// discover where memory subsystem is mounted
-
+// FindCgroupMount returns the file system mount point where the input
+// subsystem is mounted at.
+// TODO: move these to cgroup library
 func FindCgroupMount(subsystem string) (string, error) {
 
 	file, err := os.Open("/proc/mounts")
@@ -166,6 +175,8 @@ func FindCgroupMount(subsystem string) (string, error) {
 	return "", errors.New("no cgroup mount found")
 }
 
+// FindCgroups returns all cgroups with atleast one active task attached
+// for the input subsystem.
 func FindCgroups(mountpoint string) ([]string, error) {
 	cgroups := make([]string, 0, 128)
 
@@ -185,8 +196,10 @@ func FindCgroups(mountpoint string) ([]string, error) {
 	return cgroups, nil
 }
 
+// ByteSize represents a float64 with human readable methods
 type ByteSize float64
 
+// Constants for different byte sizes
 const (
 	_           = iota
 	KB ByteSize = 1 << (10 * iota)
@@ -199,6 +212,7 @@ const (
 	YB
 )
 
+// String returns human readable representation of ByteSize
 func (b ByteSize) String() string {
 	switch {
 	case b >= YB:
@@ -221,8 +235,10 @@ func (b ByteSize) String() string {
 	return fmt.Sprintf("%.2fB", b)
 }
 
+// BitSize represents a float64 with methods for human readable output
 type BitSize float64
 
+// Constants for different bit sizes
 const (
 	_          = iota
 	Kb BitSize = 1 << (10 * iota)
@@ -235,6 +251,7 @@ const (
 	Yb
 )
 
+// String returns human readable representation of ByteSize
 func (b BitSize) String() string {
 	switch {
 	case b >= Yb:
@@ -256,15 +273,3 @@ func (b BitSize) String() string {
 	}
 	return fmt.Sprintf("%.2fb", b)
 }
-
-const (
-	CGROUP_BLKIO uint8 = iota
-	CGROUP_CPU
-	CGROUP_CPUACCT
-	CGROUP_CPUSET
-	CGROUP_DEVICES
-	CGROUP_FREEZER
-	CGROUP_MEMORY
-	CGROUP_NET_CLS
-	CGROUP_NS
-)
