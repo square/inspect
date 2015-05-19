@@ -17,12 +17,16 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
+// DiskStat represents statistics collected for all disks (block devices) present
+// on the current operating system.
 type DiskStat struct {
 	Disks   map[string]*PerDiskStat
 	m       *metrics.MetricContext
 	blkdevs map[string]bool
 }
 
+// New registers statistics with metrics context and starts collection of metrics
+// every Step seconds
 func New(m *metrics.MetricContext, Step time.Duration) *DiskStat {
 	s := new(DiskStat)
 	s.Disks = make(map[string]*PerDiskStat, 6)
@@ -38,25 +42,27 @@ func New(m *metrics.MetricContext, Step time.Duration) *DiskStat {
 }
 
 // Return list of disks sorted by Usage
-type ByUsage []*PerDiskStat
+type byUsage []*PerDiskStat
 
-func (a ByUsage) Len() int           { return len(a) }
-func (a ByUsage) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByUsage) Less(i, j int) bool { return a[i].Usage() > a[j].Usage() }
+func (a byUsage) Len() int           { return len(a) }
+func (a byUsage) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a byUsage) Less(i, j int) bool { return a[i].Usage() > a[j].Usage() }
 
-// ByUsage() returns an slice of *PerDiskStat entries sorted
+// ByUsage returns an slice of *PerDiskStat entries sorted
 // by usage
-func (c *DiskStat) ByUsage() []*PerDiskStat {
-	v := make([]*PerDiskStat, 0)
-	for _, o := range c.Disks {
+func (s *DiskStat) ByUsage() []*PerDiskStat {
+	var v []*PerDiskStat
+	for _, o := range s.Disks {
 		if !math.IsNaN(o.Usage()) {
 			v = append(v, o)
 		}
 	}
-	sort.Sort(ByUsage(v))
+	sort.Sort(byUsage(v))
 	return v
 }
 
+// RefreshBlkDevList walks through /sys/block and updates list of
+// block devices.
 func (s *DiskStat) RefreshBlkDevList() {
 	var blkdevs = make(map[string]bool)
 	// block devices
@@ -69,6 +75,7 @@ func (s *DiskStat) RefreshBlkDevList() {
 	s.blkdevs = blkdevs
 }
 
+// Collect walks through /proc/diskstats and updates relevant metrics
 func (s *DiskStat) Collect() {
 	file, err := os.Open("/proc/diskstats")
 	defer file.Close()
@@ -99,29 +106,23 @@ func (s *DiskStat) Collect() {
 			s.Disks[blkdev] = o
 		}
 		sectorSize := misc.ReadUintFromFile("/sys/block/" + blkdev + "/queue/hw_sector_size")
-		d := o.Metrics
-		d.ReadCompleted.Set(f[0])
-		d.ReadMerged.Set(f[1])
-		d.ReadSectors.Set(f[2])
-		d.ReadSpentMsecs.Set(f[3])
-		d.WriteCompleted.Set(f[4])
-		d.WriteMerged.Set(f[5])
-		d.WriteSectors.Set(f[6])
-		d.WriteSpentMsecs.Set(f[7])
-		d.IOInProgress.Set(float64(f[8]))
-		d.IOSpentMsecs.Set(f[9])
-		d.WeightedIOSpentMsecs.Set(f[10])
-		d.SectorSize.Set(float64(sectorSize))
+		o.ReadCompleted.Set(f[0])
+		o.ReadMerged.Set(f[1])
+		o.ReadSectors.Set(f[2])
+		o.ReadSpentMsecs.Set(f[3])
+		o.WriteCompleted.Set(f[4])
+		o.WriteMerged.Set(f[5])
+		o.WriteSectors.Set(f[6])
+		o.WriteSpentMsecs.Set(f[7])
+		o.IOInProgress.Set(float64(f[8]))
+		o.IOSpentMsecs.Set(f[9])
+		o.WeightedIOSpentMsecs.Set(f[10])
+		o.SectorSize.Set(float64(sectorSize))
 	}
 }
 
+// PerDiskStat represents disk statistics for a particular disk
 type PerDiskStat struct {
-	Metrics *PerDiskStatMetrics
-	m       *metrics.MetricContext
-	Name    string
-}
-
-type PerDiskStatMetrics struct {
 	ReadCompleted        *metrics.Counter
 	ReadMerged           *metrics.Counter
 	ReadSectors          *metrics.Counter
@@ -134,20 +135,21 @@ type PerDiskStatMetrics struct {
 	IOSpentMsecs         *metrics.Counter
 	WeightedIOSpentMsecs *metrics.Counter
 	SectorSize           *metrics.Gauge
+	m                    *metrics.MetricContext
+	Name                 string
 }
 
+// NewPerDiskStat registers with metriccontext for a particular disk (block device)
 func NewPerDiskStat(m *metrics.MetricContext, blkdev string) *PerDiskStat {
-	c := new(PerDiskStat)
-	c.Name = blkdev
-	c.Metrics = new(PerDiskStatMetrics)
+	s := new(PerDiskStat)
+	s.Name = blkdev
 	// initialize all metrics and register them
-	misc.InitializeMetrics(c.Metrics, m, "diskstat."+blkdev, true)
-	return c
+	misc.InitializeMetrics(s, m, "diskstat."+blkdev, true)
+	return s
 }
 
 // Usage returns approximate measure of disk usage
 // (time spent doing IO / wall clock time)
 func (s *PerDiskStat) Usage() float64 {
-	o := s.Metrics
-	return ((o.IOSpentMsecs.ComputeRate()) / 1000) * 100
+	return ((s.IOSpentMsecs.ComputeRate()) / 1000) * 100
 }
