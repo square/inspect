@@ -13,44 +13,38 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
-type LoadStat struct {
-	Metrics *LoadStatMetrics
-	m       *metrics.MetricContext
-}
-
-func New(m *metrics.MetricContext, Step time.Duration) *LoadStat {
-	s := new(LoadStat)
-	s.Metrics = NewLoadStatMetrics(m, Step)
-	return s
-}
-
+// LoadStat represents load average metrics for 1/5/15 Minutes of
+// current operating system.
 // Caution: reflection is used to read this struct to discover names
 // Do not add new types
-type LoadStatMetrics struct {
+type LoadStat struct {
 	OneMinute     *metrics.Gauge
 	FiveMinute    *metrics.Gauge
 	FifteenMinute *metrics.Gauge
 	m             *metrics.MetricContext
 }
 
-func NewLoadStatMetrics(m *metrics.MetricContext, Step time.Duration) *LoadStatMetrics {
-	c := new(LoadStatMetrics)
-	c.m = m
+// New starts metrics collection every Step and registers with
+// metricscontext
+func New(m *metrics.MetricContext, Step time.Duration) *LoadStat {
+	s := new(LoadStat)
+	s.m = m
 	// initialize all metrics and register them
-	misc.InitializeMetrics(c, m, "loadstat", true)
+	misc.InitializeMetrics(s, m, "loadstat", true)
 	// collect once
-	c.Collect()
+	s.Collect()
 	// collect metrics every Step
 	ticker := time.NewTicker(Step)
 	go func() {
 		for _ = range ticker.C {
-			c.Collect()
+			s.Collect()
 		}
 	}()
-	return c
+	return s
 }
 
-func (s *LoadStatMetrics) Collect() {
+// Collect populates Loadstat by reading /proc/loadavg
+func (s *LoadStat) Collect() {
 	file, err := os.Open("/proc/loadavg")
 	if err != nil {
 		return
