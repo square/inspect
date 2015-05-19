@@ -76,7 +76,7 @@ func (s *CPUStat) Usage() float64 {
 	return s.All.Usage() * float64(len(s.cpus))
 }
 
-// Userspace returns total work done over sampling interval in userspace
+// UserSpace returns total work done over sampling interval in userspace
 // Units: # of Logical CPUs
 func (s *CPUStat) UserSpace() float64 {
 	return s.All.UserSpace() * float64(len(s.cpus))
@@ -154,7 +154,7 @@ func (o *PerCPU) Usage() float64 {
 	return math.NaN()
 }
 
-// Userspace returns total work done over sampling interval in userspace
+// UserSpace returns total work done over sampling interval in userspace
 // Units: # of Logical CPUs
 func (o *PerCPU) UserSpace() float64 {
 	u := o.User.ComputeRate()

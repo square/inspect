@@ -21,14 +21,20 @@ import (
 */
 import "C"
 
-var LINUX_TICKS_IN_SEC int = int(C.sysconf(C._SC_CLK_TCK))
+// LinuxTicksInSecond is number of ticks in a second as provided by
+// SC_CLK_TCK sysconf
+var LinuxTicksInSecond int = int(C.sysconf(C._SC_CLK_TCK))
 
+// CgroupStat represents CPU related statistics gathered for all
+// cgroups attached with non-default cpu subsystem
 type CgroupStat struct {
 	Cgroups    map[string]*PerCgroupStat
 	m          *metrics.MetricContext
 	Mountpoint string
 }
 
+// NewCgroupStat registers with metriccontext and starts collecting statistics
+// for all cgroups every Step.
 func NewCgroupStat(m *metrics.MetricContext, Step time.Duration) *CgroupStat {
 	c := new(CgroupStat)
 	c.m = m
@@ -51,6 +57,8 @@ func NewCgroupStat(m *metrics.MetricContext, Step time.Duration) *CgroupStat {
 	return c
 }
 
+// Collect walks through cpu cgroup subsystem mount and collects cpu time
+// spent in kernel/userspace for tasks belonging to non-default cgroup.
 func (c *CgroupStat) Collect(mountpoint string) {
 
 	cgroups, err := misc.FindCgroups(mountpoint)
@@ -65,7 +73,7 @@ func (c *CgroupStat) Collect(mountpoint string) {
 		cgroupsMap[cgroup] = true
 	}
 
-	for cgroup, _ := range c.Cgroups {
+	for cgroup := range c.Cgroups {
 		_, ok := cgroupsMap[cgroup]
 		if !ok {
 			perCgroupStat, ok := c.Cgroups[cgroup]
@@ -86,7 +94,7 @@ func (c *CgroupStat) Collect(mountpoint string) {
 	}
 }
 
-// Per Cgroup functions
+// PerCgroupStat represents CPU related metrics for this particular cgroup under cpu subsystem
 type PerCgroupStat struct {
 	// raw metrics
 	Nr_periods     *metrics.Counter
@@ -108,6 +116,7 @@ type PerCgroupStat struct {
 	prefix string
 }
 
+// NewPerCgroupStat registers with metricscontext for a particular cgroup
 func NewPerCgroupStat(m *metrics.MetricContext, path string, mp string) *PerCgroupStat {
 	c := new(PerCgroupStat)
 	c.m = m
@@ -224,17 +233,17 @@ func (s *PerCgroupStat) Collect() {
 
 func (s *PerCgroupStat) usage() float64 {
 	rate_per_sec := s.Utime.ComputeRate() + s.Stime.ComputeRate()
-	return (rate_per_sec) / float64(LINUX_TICKS_IN_SEC)
+	return (rate_per_sec) / float64(LinuxTicksInSecond)
 }
 
 func (s *PerCgroupStat) userspace() float64 {
 	rate_per_sec := s.Utime.ComputeRate()
-	return (rate_per_sec) / float64(LINUX_TICKS_IN_SEC)
+	return (rate_per_sec) / float64(LinuxTicksInSecond)
 }
 
 func (s *PerCgroupStat) kernel() float64 {
 	rate_per_sec := s.Stime.ComputeRate()
-	return (rate_per_sec) / float64(LINUX_TICKS_IN_SEC)
+	return (rate_per_sec) / float64(LinuxTicksInSecond)
 }
 
 func (s *PerCgroupStat) getCgroupCPUTimes() {
