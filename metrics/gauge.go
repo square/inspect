@@ -8,7 +8,8 @@ import (
 	"sync"
 )
 
-// Gauges
+// Gauge represents a metric of type Gauge. An example would be number of
+// users logged in at the moment.
 type Gauge struct {
 	v  float64
 	mu sync.RWMutex
@@ -21,21 +22,21 @@ func NewGauge() *Gauge {
 	return g
 }
 
-// Reset() all values are reset to defaults
+// Reset - resets all values are reset to defaults
 // Usually called from NewGauge but useful if you have to
 // re-use and existing object
 func (g *Gauge) Reset() {
 	g.v = math.NaN()
 }
 
-// Set value of Gauge
+// Set - Sets value of Gauge to input
 func (g *Gauge) Set(v float64) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.v = v
 }
 
-// Get value of Gauge
+// Get - Returns current value of Gauge
 func (g *Gauge) Get() float64 {
 	g.mu.Lock()
 	defer g.mu.Unlock()

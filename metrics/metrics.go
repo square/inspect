@@ -3,29 +3,33 @@
 package metrics
 
 import (
-	"sync/atomic"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
 // package initialization code
 // sets up a ticker to "cache" time
 
-var TICKS int64
+var ticks int64
 
 func init() {
 	start := time.Now().UnixNano()
 	ticker := time.NewTicker(time.Millisecond * jiffy)
 	go func() {
 		for t := range ticker.C {
-			atomic.StoreInt64(&TICKS, t.UnixNano() - start)
+			atomic.StoreInt64(&ticks, t.UnixNano()-start)
 		}
 	}()
 }
 
+// OutputFilterFunc represents a function that is used to filter
+// metrics from being reported out from JSON handler
 type OutputFilterFunc func(name string, v interface{}) bool
 
+// MetricContext represents a reference to all metrics registered
+// by name within a namespace
 type MetricContext struct {
 	namespace     string
 	Counters      map[string]*Counter
@@ -44,8 +48,10 @@ type MetricContext struct {
 const jiffy = 100
 
 //nanoseconds in a second represented in float64
-const NS_IN_SEC = float64(time.Second)
+const NsInSec = float64(time.Second)
 
+// NewMetricContext initializes a MetricContext with the input namespace
+// and returns it
 func NewMetricContext(namespace string) *MetricContext {
 	m := new(MetricContext)
 	m.namespace = namespace
@@ -60,8 +66,7 @@ func NewMetricContext(namespace string) *MetricContext {
 	return m
 }
 
-// Register(v Metric) registers a metric with metric
-// context
+// Register registers a metric with metriccontext
 func (m *MetricContext) Register(v interface{}, name string) {
 	switch v := v.(type) {
 	case *BasicCounter:
@@ -75,8 +80,7 @@ func (m *MetricContext) Register(v interface{}, name string) {
 	}
 }
 
-// Unregister(v Metric) unregisters a metric with metric
-// context
+// Unregister unregisters a metric with metriccontext
 func (m *MetricContext) Unregister(v interface{}, name string) {
 	switch v.(type) {
 	case *BasicCounter:

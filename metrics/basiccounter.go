@@ -7,18 +7,18 @@ import (
 	"sync/atomic"
 )
 
-// BasicCounter is a minimal counter(uint64) - all operations are atomic
-// Usage:
-//   b := metrics.NewBasicCounter()
-//   b.Add(1)
-//   b.Get()
-
+// NewBasicCounter initializes and returns a BasicCounter
 func NewBasicCounter() *BasicCounter {
 	c := new(BasicCounter)
 	c.Reset()
 	return c
 }
 
+// BasicCounter is a minimal counter(uint64) - all operations are atomic
+// Usage:
+//   b := metrics.NewBasicCounter()
+//   b.Add(1)
+//   b.Get()
 type BasicCounter uint64
 
 // Reset counter to zero

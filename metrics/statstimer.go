@@ -12,31 +12,7 @@ import (
 	"time"
 )
 
-/* StatsTimer
-
-A StatTimer can be used to compute statistics for a timed operation
-Arguments:
-  timeUnit time.Duration - time unit to report statistics on
-  nsamples int - number of samples to keep in-memory for stats computation
-
-Example use:
-  m := metrics.NewMetricContext("webapp")
-  s := m.NewStatsTimer("latency", time.Millisecond, 100)
-
-  func (wa *WebApp)  HandleQuery(w http.ResponseWriter, r *http.Request) {
-	  stopWatch := s.Start()
-	  .....
-	  s.Stop(stopWatch)
-  }
-
-  pctile_95th, err := s.Percentile(95)
-
-  if err == nil {
-  	fmt.Printf("95th percentile latency: ", pctile_95th)
-  }
-
-*/
-
+// StatsTimer represents a metric of type statstimer
 type StatsTimer struct {
 	history  []int64
 	idx      int
@@ -44,14 +20,30 @@ type StatsTimer struct {
 	timeUnit time.Duration
 }
 
-const NOT_INITIALIZED = -1
+const notInitialized = -1
 
-// default percentiles to compute when serializing statstimer type
+// Percentiles are default percentiles to compute when serializing statstimer type
 // to stdout/json
-var PERCENTILES = []float64{50, 75, 95, 99, 99.9, 99.99, 99.999}
+var Percentiles = []float64{50, 75, 95, 99, 99.9, 99.99, 99.999}
 
+// NewStatsTimer initializes and returns a StatsTimer.
+// StatTimer can be used to compute statistics for a timed operation.
+// Arguments:
+//  timeUnit time.Duration - time unit to report statistics on
+//  nsamples int - number of samples to keep in-memory for stats computation
+// Example:
+//  m := metrics.NewMetricContext("webapp")
+//  s := m.NewStatsTimer("latency", time.Millisecond, 100)
+//  func (wa *WebApp)  HandleQuery(w http.ResponseWriter, r *http.Request) {
+//     stopWatch := s.Start()
+//     ... do work...
+//     s.Stop(stopWatch)
+//  }
+//  pctile95, err := s.Percentile(95)
+//  if err == nil {
+//    fmt.Printf("95th percentile for latency: ", pctile95)
+//  }
 func NewStatsTimer(timeUnit time.Duration, nsamples int) *StatsTimer {
-
 	s := new(StatsTimer)
 	s.timeUnit = timeUnit
 	s.history = make([]int64, nsamples)
@@ -61,18 +53,21 @@ func NewStatsTimer(timeUnit time.Duration, nsamples int) *StatsTimer {
 	return s
 }
 
+// Reset - resets the stat of StatsTimer
 func (s *StatsTimer) Reset() {
 	for i := range s.history {
-		s.history[i] = NOT_INITIALIZED
+		s.history[i] = notInitialized
 	}
 }
 
+// Start - Start a stopWatch for the StatsTimer and returns it
 func (s *StatsTimer) Start() *Timer {
 	t := NewTimer()
 	t.Start()
 	return t
 }
 
+// Stop - Stops the stopWatch for the StatsTimer.
 func (s *StatsTimer) Stop(t *Timer) float64 {
 	delta := t.Stop()
 
@@ -88,16 +83,16 @@ func (s *StatsTimer) Stop(t *Timer) float64 {
 }
 
 // TODO: move stats implementation to a dedicated package
+type int64Slice []int64
 
-type Int64Slice []int64
+func (a int64Slice) Len() int           { return len(a) }
+func (a int64Slice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a int64Slice) Less(i, j int) bool { return a[i] < a[j] }
 
-func (a Int64Slice) Len() int           { return len(a) }
-func (a Int64Slice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a Int64Slice) Less(i, j int) bool { return a[i] < a[j] }
-
+// Percentile returns the value at input percentile
+// Implementation is based on Nearest rank
+// http://en.wikipedia.org/wiki/Percentile
 func (s *StatsTimer) Percentile(percentile float64) (float64, error) {
-	// Nearest rank implementation
-	// http://en.wikipedia.org/wiki/Percentile
 	histLen := len(s.history)
 
 	if percentile > 100 {
@@ -106,7 +101,7 @@ func (s *StatsTimer) Percentile(percentile float64) (float64, error) {
 
 	in := make([]int64, 0, histLen)
 	for i := range s.history {
-		if s.history[i] != NOT_INITIALIZED {
+		if s.history[i] != notInitialized {
 			in = append(in, s.history[i])
 		}
 	}
@@ -118,14 +113,14 @@ func (s *StatsTimer) Percentile(percentile float64) (float64, error) {
 	}
 
 	// Since slices are zero-indexed, we are naturally rounded up
-	nearest_rank := int((percentile / 100) * float64(filtLen))
+	nearestRank := int((percentile / 100) * float64(filtLen))
 
-	if nearest_rank == filtLen {
-		nearest_rank = filtLen - 1
+	if nearestRank == filtLen {
+		nearestRank = filtLen - 1
 	}
 
-	sort.Sort(Int64Slice(in))
-	ret := float64(in[nearest_rank]) / float64(s.timeUnit.Nanoseconds())
+	sort.Sort(int64Slice(in))
+	ret := float64(in[nearestRank]) / float64(s.timeUnit.Nanoseconds())
 
 	return ret, nil
 }
@@ -138,7 +133,7 @@ func (s *StatsTimer) MarshalJSON() ([]byte, error) {
 		value      float64
 	}
 	var pctiles []percentileData
-	for _, p := range PERCENTILES {
+	for _, p := range Percentiles {
 		percentile, err := s.Percentile(p)
 		stuff := fmt.Sprintf("%.6f", p)
 		if err == nil {
