@@ -8,7 +8,6 @@ import (
 
 // ProcessStatInterface defines common methods that all
 // platform specific ProcessStat type must implement
-
 type ProcessStatInterface interface {
 	ByCPUUsage() []*PerProcessStat
 	ByMemUsage() []*PerProcessStat
@@ -20,7 +19,6 @@ var _ ProcessStatInterface = &ProcessStat{}
 // PerProcessStatInterface defines common methods that
 // all platform specific PerProcessStat types must
 // implement
-
 type PerProcessStatInterface interface {
 	CPUUsage() float64
 	MemUsage() float64
@@ -28,48 +26,51 @@ type PerProcessStatInterface interface {
 
 var _ PerProcessStatInterface = &PerProcessStat{}
 
-// ByCPUUsage implements sort.Interface for []*PerProcessStat based on
+// byCPUUsage implements sort.Interface for []*PerProcessStat based on
 // the Usage() method
-type ByCPUUsage []*PerProcessStat
+type byCPUUsage []*PerProcessStat
 
-func (a ByCPUUsage) Len() int           { return len(a) }
-func (a ByCPUUsage) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByCPUUsage) Less(i, j int) bool { return a[i].CPUUsage() > a[j].CPUUsage() }
+func (a byCPUUsage) Len() int           { return len(a) }
+func (a byCPUUsage) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a byCPUUsage) Less(i, j int) bool { return a[i].CPUUsage() > a[j].CPUUsage() }
 
-// ByCPUUsage() returns an slice of *PerProcessStat entries sorted
+// ByCPUUsage returns an slice of *PerProcessStat entries sorted
 // by CPU usage
 func (c *ProcessStat) ByCPUUsage() []*PerProcessStat {
-	v := make([]*PerProcessStat, 0)
+	var v []*PerProcessStat
 	for _, o := range c.Processes {
 		if !math.IsNaN(o.CPUUsage()) {
 			v = append(v, o)
 		}
 	}
-	sort.Sort(ByCPUUsage(v))
+	sort.Sort(byCPUUsage(v))
 	return v
 }
 
-type ByMemUsage []*PerProcessStat
+type byMemUsage []*PerProcessStat
 
-func (a ByMemUsage) Len() int           { return len(a) }
-func (a ByMemUsage) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByMemUsage) Less(i, j int) bool { return a[i].MemUsage() > a[j].MemUsage() }
+func (a byMemUsage) Len() int           { return len(a) }
+func (a byMemUsage) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a byMemUsage) Less(i, j int) bool { return a[i].MemUsage() > a[j].MemUsage() }
 
-// ByMemUsage() returns an slice of *PerProcessStat entries sorted
+// ByMemUsage returns an slice of *PerProcessStat entries sorted
 // by Memory usage
 func (c *ProcessStat) ByMemUsage() []*PerProcessStat {
-	v := make([]*PerProcessStat, 0)
+	var v []*PerProcessStat
 	for _, o := range c.Processes {
 		if !math.IsNaN(o.MemUsage()) {
 			v = append(v, o)
 		}
 	}
-	sort.Sort(ByMemUsage(v))
+	sort.Sort(byMemUsage(v))
 	return v
 }
 
+// PidFilterFunc represents a function that can be passed to PerProcessStat
+// to express interest in tracking a particular process
 type PidFilterFunc func(pidstat *PerProcessStat) (interested bool)
 
+// Filter runs the user supplied filter function
 func (f PidFilterFunc) Filter(pidstat *PerProcessStat) (interested bool) {
 	return f(pidstat)
 }

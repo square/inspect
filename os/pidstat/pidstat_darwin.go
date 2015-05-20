@@ -42,25 +42,20 @@ uint64_t absolute_to_nano(uint64_t abs)
 */
 import "C"
 
-const NS = 1 * 1000 * 1000 * 1000
+const nanoSecond = 1 * 1000 * 1000 * 1000
 
+// ProcessStat represents per-process cpu usage statistics
 type ProcessStat struct {
 	Processes map[string]*PerProcessStat
 	m         *metrics.MetricContext
 	hport     C.host_t
 }
 
-// NewProcessStat allocates a new ProcessStat object
-// Arguments:
-// m - *metricContext
-
-// Collects metrics every Step seconds
-// Drops refresh interval by Step for every additional
-// 1024 processes
+// NewProcessStat registers with metriccontext and collects per-process
+// cpu statistics every Step
 // TODO: Implement better heuristics to manage load
 //   * Collect metrics for newer processes at faster rate
 //   * Slower rate for processes with neglible rate?
-
 func NewProcessStat(m *metrics.MetricContext, Step time.Duration) *ProcessStat {
 	c := new(ProcessStat)
 	c.m = m
@@ -88,17 +83,21 @@ func NewProcessStat(m *metrics.MetricContext, Step time.Duration) *ProcessStat {
 	return c
 }
 
-// not implemented on darwin
+// SetPidFilter takes a PidFilterFunc and applies it as a filter
+// to reduce number of processes to keep track of.
+// XXX: Not implemented in darwin
 func (s *ProcessStat) SetPidFilter(filter PidFilterFunc) {
 	return
 }
 
+// Collect walks through /proc and updates stats
+// Collect is usually called internally based on
+// parameters passed via metric context
 // reference /usr/include/mach/task_info.h
 // works on MacOSX 10.9.2; YMMV might vary
+func (s *ProcessStat) Collect(collectAttributes bool) {
 
-func (c *ProcessStat) Collect(collectAttributes bool) {
-
-	h := c.Processes
+	h := s.Processes
 	for _, v := range h {
 		v.dead = true
 	}
@@ -114,7 +113,7 @@ func (c *ProcessStat) Collect(collectAttributes bool) {
 
 	// get privileged port to get information about all tasks
 
-	if C.host_processor_set_priv(C.host_priv_t(c.hport),
+	if C.host_processor_set_priv(C.host_priv_t(s.hport),
 		pDefaultSet, &pDefaultSetControl) != C.KERN_SUCCESS {
 		return
 	}
@@ -136,20 +135,20 @@ func (c *ProcessStat) Collect(collectAttributes bool) {
 	var i uint32
 	for i = 0; i < uint32(taskCount); i++ {
 
-		taskId := goTaskList[i]
+		taskID := goTaskList[i]
 		var pid C.int
 		// var tinfo C.task_info_data_t
 		var count C.mach_msg_type_number_t
 		var taskBasicInfo C.mach_task_basic_info_data_t
 		var taskAbsoluteInfo C.task_absolutetime_info_data_t
 
-		if (C.pid_for_task(C.mach_port_name_t(taskId), &pid) != C.KERN_SUCCESS) ||
+		if (C.pid_for_task(C.mach_port_name_t(taskID), &pid) != C.KERN_SUCCESS) ||
 			(pid < 0) {
 			continue
 		}
 
 		count = C.MACH_TASK_BASIC_INFO_COUNT
-		kr := C.task_info(taskId, C.MACH_TASK_BASIC_INFO,
+		kr := C.task_info(taskID, C.MACH_TASK_BASIC_INFO,
 			(C.task_info_t)(unsafe.Pointer(&taskBasicInfo)),
 			&count)
 		if kr != C.KERN_SUCCESS {
@@ -159,12 +158,12 @@ func (c *ProcessStat) Collect(collectAttributes bool) {
 		spid := fmt.Sprintf("%v", pid)
 		pidstat, ok := h[spid]
 		if !ok {
-			pidstat = NewPerProcessStat(c.m, spid)
+			pidstat = NewPerProcessStat(s.m, spid)
 			h[spid] = pidstat
 		}
 
 		if collectAttributes || !ok {
-			pidstat.CollectAttributes(pid)
+			pidstat.collectAttributes(pid)
 		}
 
 		pidstat.Metrics.VirtualSize.Set(float64(taskBasicInfo.virtual_size))
@@ -172,7 +171,7 @@ func (c *ProcessStat) Collect(collectAttributes bool) {
 		pidstat.Metrics.ResidentSizeMax.Set(float64(taskBasicInfo.resident_size_max))
 
 		count = C.TASK_ABSOLUTETIME_INFO_COUNT
-		kr = C.task_info(taskId, C.TASK_ABSOLUTETIME_INFO,
+		kr = C.task_info(taskID, C.TASK_ABSOLUTETIME_INFO,
 			(C.task_info_t)(unsafe.Pointer(&taskAbsoluteInfo)),
 			&count)
 		if kr != C.KERN_SUCCESS {
@@ -194,10 +193,10 @@ func (c *ProcessStat) Collect(collectAttributes bool) {
 
 }
 
-// Per Process functions
+// PerProcessStat represents per process statistics and methods.
 type PerProcessStat struct {
 	pid     string
-	Uid     int
+	UID     int
 	user    string
 	comm    string
 	Metrics *PerProcessStatMetrics
@@ -205,6 +204,7 @@ type PerProcessStat struct {
 	dead    bool
 }
 
+// NewPerProcessStat registers with metriccontext for single process
 func NewPerProcessStat(m *metrics.MetricContext, p string) *PerProcessStat {
 	c := new(PerProcessStat)
 	c.m = m
@@ -217,27 +217,33 @@ func NewPerProcessStat(m *metrics.MetricContext, p string) *PerProcessStat {
 // Unit: # of logical CPUs
 func (s *PerProcessStat) CPUUsage() float64 {
 	o := s.Metrics
-	rate_ns := o.UserTime.ComputeRate() + o.SystemTime.ComputeRate()
-	return (rate_ns / float64(NS))
+	rateNs := o.UserTime.ComputeRate() + o.SystemTime.ComputeRate()
+	return (rateNs / float64(nanoSecond))
 }
 
+// MemUsage returns amount of memory resident for this process in bytes.
 func (s *PerProcessStat) MemUsage() float64 {
 	o := s.Metrics
 	return o.ResidentSize.Get()
 }
 
+// Pid returns the pid for this process
 func (s *PerProcessStat) Pid() string {
 	return s.pid
 }
 
+// Comm returns the command used to run for this process
 func (s *PerProcessStat) Comm() string {
 	return s.comm
 }
 
+// User returns the username for the process - looked up by effective uid
 func (s *PerProcessStat) User() string {
 	return s.user
 }
 
+// PerProcessStatMetrics represents metrics for the per process
+// stats collection
 type PerProcessStatMetrics struct {
 	VirtualSize     *metrics.Gauge
 	ResidentSize    *metrics.Gauge
@@ -246,6 +252,7 @@ type PerProcessStatMetrics struct {
 	SystemTime      *metrics.Counter
 }
 
+// NewPerProcessStatMetrics registers with metricscontext
 func NewPerProcessStatMetrics(m *metrics.MetricContext, pid string) *PerProcessStatMetrics {
 	s := new(PerProcessStatMetrics)
 	// initialize all metrics and do NOT register for now
@@ -253,14 +260,15 @@ func NewPerProcessStatMetrics(m *metrics.MetricContext, pid string) *PerProcessS
 	return s
 }
 
-func (s *PerProcessStat) CollectAttributes(pid C.int) {
+// unexported
+func (s *PerProcessStat) collectAttributes(pid C.int) {
 	// some cgo follows
 	var kp C.struct_kinfo_proc
 
 	C.get_process_info(&kp, C.pid_t(pid))
 	s.comm = C.GoString((*C.char)(unsafe.Pointer(&kp.kp_proc.p_comm)))
-	s.Uid = int(kp.kp_eproc.e_ucred.cr_uid)
-	u, err := user.LookupId(fmt.Sprintf("%v", s.Uid))
+	s.UID = int(kp.kp_eproc.e_ucred.cr_uid)
+	u, err := user.LookupId(fmt.Sprintf("%v", s.UID))
 	if err == nil {
 		s.user = u.Username
 	}
