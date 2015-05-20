@@ -5,47 +5,19 @@ package memstat
 
 import (
 	"bufio"
-	"github.com/square/inspect/metrics"
-	"github.com/square/inspect/os/misc"
 	"math"
 	"os"
 	"reflect"
 	"regexp"
 	"time"
+
+	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/os/misc"
 )
 
+// MemStat represents statistics about memory subsystem
+// Caution: reflection is used to populate matching fields in /proc/meminfo
 type MemStat struct {
-	Metrics       *MemStatMetrics
-	m             *metrics.MetricContext
-	Cgroups       map[string]*CgroupStat
-	EnableCgroups bool
-}
-
-func New(m *metrics.MetricContext, Step time.Duration) *MemStat {
-	s := new(MemStat)
-	s.Metrics = MemStatMetricsNew(m, Step)
-	return s
-}
-
-// Free returns free physical memory including buffers/caches/sreclaimable
-func (s *MemStat) Free() float64 {
-	o := s.Metrics
-	return o.MemFree.Get() + o.Buffers.Get() + o.Cached.Get() + o.SReclaimable.Get()
-}
-
-// Usage returns physical memory in use; not including buffers/cached/sreclaimable
-func (s *MemStat) Usage() float64 {
-	o := s.Metrics
-	return o.MemTotal.Get() - s.Free()
-}
-
-// Usage returns total physical memory
-func (s *MemStat) Total() float64 {
-	o := s.Metrics
-	return o.MemTotal.Get()
-}
-
-type MemStatMetrics struct {
 	MemTotal          *metrics.Gauge
 	MemFree           *metrics.Gauge
 	Buffers           *metrics.Gauge
@@ -88,29 +60,49 @@ type MemStatMetrics struct {
 	Hugepagesize      *metrics.Gauge
 	DirectMap4k       *metrics.Gauge
 	DirectMap2M       *metrics.Gauge
+	// unexported
+	m *metrics.MetricContext
 }
 
-func MemStatMetricsNew(m *metrics.MetricContext, Step time.Duration) *MemStatMetrics {
-	c := new(MemStatMetrics)
-
+// New registers with metriccontext and starts collecting metrics
+// every Step
+func New(m *metrics.MetricContext, Step time.Duration) *MemStat {
+	s := new(MemStat)
+	s.m = m
 	// initialize all metrics and register them
-	misc.InitializeMetrics(c, m, "memstat", true)
+	misc.InitializeMetrics(s, m, "memstat", true)
 
 	// collect once
-	c.Collect()
+	s.Collect()
 
 	// collect metrics every Step
 	ticker := time.NewTicker(Step)
 	go func() {
 		for _ = range ticker.C {
-			c.Collect()
+			s.Collect()
 		}
 	}()
 
-	return c
+	return s
 }
 
-func (s *MemStatMetrics) Collect() {
+// Free returns free physical memory including buffers/caches/sreclaimable
+func (s *MemStat) Free() float64 {
+	return s.MemFree.Get() + s.Buffers.Get() + s.Cached.Get() + s.SReclaimable.Get()
+}
+
+// Usage returns physical memory in use; not including buffers/cached/sreclaimable
+func (s *MemStat) Usage() float64 {
+	return s.MemTotal.Get() - s.Free()
+}
+
+// Total returns total physical memory
+func (s *MemStat) Total() float64 {
+	return s.MemTotal.Get()
+}
+
+// Collect reads /proc/meminfo and populates MemStatMetrics
+func (s *MemStat) Collect() {
 	file, err := os.Open("/proc/meminfo")
 	if err != nil {
 		return

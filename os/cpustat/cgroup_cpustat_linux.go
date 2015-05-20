@@ -23,7 +23,7 @@ import "C"
 
 // LinuxTicksInSecond is number of ticks in a second as provided by
 // SC_CLK_TCK sysconf
-var LinuxTicksInSecond int = int(C.sysconf(C._SC_CLK_TCK))
+var linuxTicksInSecond = int(C.sysconf(C._SC_CLK_TCK))
 
 // CgroupStat represents CPU related statistics gathered for all
 // cgroups attached with non-default cpu subsystem
@@ -97,13 +97,13 @@ func (c *CgroupStat) Collect(mountpoint string) {
 // PerCgroupStat represents CPU related metrics for this particular cgroup under cpu subsystem
 type PerCgroupStat struct {
 	// raw metrics
-	Nr_periods     *metrics.Counter
-	Nr_throttled   *metrics.Counter
-	Throttled_time *metrics.Counter
-	Cfs_period_us  *metrics.Gauge
-	Cfs_quota_us   *metrics.Gauge
-	Utime          *metrics.Counter
-	Stime          *metrics.Counter
+	NrPeriods     *metrics.Counter
+	NrThrottled   *metrics.Counter
+	ThrottledTime *metrics.Counter
+	CfsPeriodUs   *metrics.Gauge
+	CfsQuotaUs    *metrics.Gauge
+	Utime         *metrics.Counter
+	Stime         *metrics.Counter
 	// populate computed stats
 	UsageCount     *metrics.Gauge
 	UserspaceCount *metrics.Gauge
@@ -138,14 +138,14 @@ func (s *PerCgroupStat) Unregister() {
 // be done due to cgroup limits.
 // Unit: Logical CPUs
 func (s *PerCgroupStat) Throttle() float64 {
-	throttled_sec := s.Throttled_time.ComputeRate()
-	return (throttled_sec / (1 * 1000 * 1000 * 1000))
+	throttledSec := s.ThrottledTime.ComputeRate()
+	return (throttledSec / (1 * 1000 * 1000 * 1000))
 }
 
 // Quota returns how many logical CPUs can be used by this cgroup
 // Quota is adjusted to count of CPUs if it is not set
 func (s *PerCgroupStat) Quota() float64 {
-	quota := (s.Cfs_quota_us.Get() / s.Cfs_period_us.Get())
+	quota := (s.CfsQuotaUs.Get() / s.CfsPeriodUs.Get())
 	nproc := float64(runtime.NumCPU())
 	if quota <= 0 || quota > nproc {
 		quota = nproc
@@ -188,24 +188,24 @@ func (s *PerCgroupStat) Collect() {
 		f := regexp.MustCompile("\\s+").Split(scanner.Text(), 2)
 
 		if f[0] == "nr_periods" {
-			s.Nr_periods.Set(misc.ParseUint(f[1]))
+			s.NrPeriods.Set(misc.ParseUint(f[1]))
 		}
 
 		if f[0] == "nr_throttled" {
-			s.Nr_throttled.Set(misc.ParseUint(f[1]))
+			s.NrThrottled.Set(misc.ParseUint(f[1]))
 		}
 
 		if f[0] == "throttled_time" {
-			s.Throttled_time.Set(misc.ParseUint(f[1]))
+			s.ThrottledTime.Set(misc.ParseUint(f[1]))
 		}
 	}
 
-	s.Cfs_period_us.Set(
+	s.CfsPeriodUs.Set(
 		float64(misc.ReadUintFromFile(
 			s.path + "/" + "cpu.cfs_period_us")))
 	// negative values of quota indicate no quota.
 	// it is not possible for this variable to be zero
-	s.Cfs_quota_us.Set(
+	s.CfsQuotaUs.Set(
 		float64(misc.ReadUintFromFile(
 			s.path + "/" + "cpu.cfs_quota_us")))
 
@@ -232,18 +232,18 @@ func (s *PerCgroupStat) Collect() {
 // unexported
 
 func (s *PerCgroupStat) usage() float64 {
-	rate_per_sec := s.Utime.ComputeRate() + s.Stime.ComputeRate()
-	return (rate_per_sec) / float64(LinuxTicksInSecond)
+	ratePerSec := s.Utime.ComputeRate() + s.Stime.ComputeRate()
+	return (ratePerSec) / float64(linuxTicksInSecond)
 }
 
 func (s *PerCgroupStat) userspace() float64 {
-	rate_per_sec := s.Utime.ComputeRate()
-	return (rate_per_sec) / float64(LinuxTicksInSecond)
+	ratePerSec := s.Utime.ComputeRate()
+	return (ratePerSec) / float64(linuxTicksInSecond)
 }
 
 func (s *PerCgroupStat) kernel() float64 {
-	rate_per_sec := s.Stime.ComputeRate()
-	return (rate_per_sec) / float64(LinuxTicksInSecond)
+	ratePerSec := s.Stime.ComputeRate()
+	return (ratePerSec) / float64(linuxTicksInSecond)
 }
 
 func (s *PerCgroupStat) getCgroupCPUTimes() {

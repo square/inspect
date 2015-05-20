@@ -17,12 +17,16 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
+// CgroupStat represents memory usage statistics for all non-default
+// cgroups associated with cgroup memory controller
 type CgroupStat struct {
 	Cgroups    map[string]*PerCgroupStat
 	m          *metrics.MetricContext
 	Mountpoint string
 }
 
+// NewCgroupStat registers with metriccontext and starts metric collection
+// every Step
 func NewCgroupStat(m *metrics.MetricContext, Step time.Duration) *CgroupStat {
 	c := new(CgroupStat)
 	c.m = m
@@ -44,6 +48,9 @@ func NewCgroupStat(m *metrics.MetricContext, Step time.Duration) *CgroupStat {
 	return c
 }
 
+// Collect gathers memory usage statistics for all cgroups registered
+// with non-default cgroup with memory controller.
+// cgroups without any tasks are ignored.
 func (c *CgroupStat) Collect(mountpoint string) {
 
 	cgroups, err := misc.FindCgroups(mountpoint)
@@ -58,7 +65,7 @@ func (c *CgroupStat) Collect(mountpoint string) {
 		cgroupsMap[cgroup] = true
 	}
 
-	for cgroup, _ := range c.Cgroups {
+	for cgroup := range c.Cgroups {
 		_, ok := cgroupsMap[cgroup]
 		if !ok {
 			perCgroupStat, ok := c.Cgroups[cgroup]
@@ -79,7 +86,7 @@ func (c *CgroupStat) Collect(mountpoint string) {
 
 }
 
-// Per Cgroup functions
+// PerCgroupStat represents statistics for a particular cgroup
 type PerCgroupStat struct {
 	m *metrics.MetricContext
 	// memory.stat
@@ -115,6 +122,7 @@ type PerCgroupStat struct {
 	prefix       string
 }
 
+// NewPerCgroupStat registers with metriccontext for a particular cgroup
 func NewPerCgroupStat(m *metrics.MetricContext, path string, mp string) *PerCgroupStat {
 	c := new(PerCgroupStat)
 	c.m = m
@@ -150,6 +158,7 @@ func (s *PerCgroupStat) SoftLimit() float64 {
 	return s.Soft_Limit_In_Bytes.Get()
 }
 
+// Collect reads memory.stat and uses reflection to populate PerCgroupStat
 func (s *PerCgroupStat) Collect() {
 	file, err := os.Open(s.path + "/" + "memory.stat")
 	if err != nil {

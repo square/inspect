@@ -4,10 +4,11 @@
 package memstat
 
 import (
-	"github.com/square/inspect/metrics"
-	"github.com/square/inspect/os/misc"
 	"time"
 	"unsafe"
+
+	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/os/misc"
 )
 
 /*
@@ -33,53 +34,26 @@ int64_t get_phys_memory() {
 */
 import "C"
 
+// MemStat represents memory usage statistics
 type MemStat struct {
-	Metrics *MemStatMetrics
-	m       *metrics.MetricContext
+	free      *metrics.Gauge
+	active    *metrics.Gauge
+	inactive  *metrics.Gauge
+	wired     *metrics.Gauge
+	purgeable *metrics.Gauge
+	total     *metrics.Gauge
+	Pagesize  C.vm_size_t
+	//
+	m *metrics.MetricContext
 }
 
+// New registers with metriccontext and starts metric collection
+// every Step
 func New(m *metrics.MetricContext, Step time.Duration) *MemStat {
 	s := new(MemStat)
-	s.Metrics = MemStatMetricsNew(m, Step)
-	return s
-}
-
-// Free returns free memory
-// Inactive lists may contain dirty pages
-// Unfortunately there doesn't seem to be easy way
-// to get that count
-func (s *MemStat) Free() float64 {
-	o := s.Metrics
-	return o.Free.Get() + o.Inactive.Get() + o.Purgeable.Get()
-}
-
-// Usage returns physical memory in use
-func (s *MemStat) Usage() float64 {
-	o := s.Metrics
-	return o.Total.Get() - s.Free()
-}
-
-// Usage returns total physical memory
-func (s *MemStat) Total() float64 {
-	o := s.Metrics
-	return o.Total.Get()
-}
-
-type MemStatMetrics struct {
-	Free      *metrics.Gauge
-	Active    *metrics.Gauge
-	Inactive  *metrics.Gauge
-	Wired     *metrics.Gauge
-	Purgeable *metrics.Gauge
-	Total     *metrics.Gauge
-	Pagesize  C.vm_size_t
-}
-
-func MemStatMetricsNew(m *metrics.MetricContext, Step time.Duration) *MemStatMetrics {
-	c := new(MemStatMetrics)
-
+	s.m = m
 	// initialize all gauges
-	misc.InitializeMetrics(c, m, "memstat", true)
+	misc.InitializeMetrics(s, m, "memstat", true)
 
 	host := C.mach_host_self()
 	C.host_page_size(C.host_t(host), &c.Pagesize)
@@ -88,15 +62,34 @@ func MemStatMetricsNew(m *metrics.MetricContext, Step time.Duration) *MemStatMet
 	ticker := time.NewTicker(Step)
 	go func() {
 		for _ = range ticker.C {
-			c.Collect()
+			s.Collect()
 		}
 	}()
 
-	return c
+	return s
 }
 
-func (s *MemStatMetrics) Collect() {
+// Free returns free memory
+// Inactive lists may contain dirty pages
+// Unfortunately there doesn't seem to be easy way
+// to get that count
+func (s *MemStat) Free() float64 {
+	return s.free.Get() + s.inactive.Get() + s.purgeable.Get()
+}
 
+// Usage returns physical memory in use
+func (s *MemStat) Usage() float64 {
+	return s.total.Get() - s.Free()
+}
+
+// Total returns total physical memory
+func (s *MemStat) Total() float64 {
+	return s.total.Get()
+}
+
+// Collect uses mach interface to populate various memory usage
+// metrics
+func (s *MemStat) Collect() {
 	var meminfo C.vm_statistics64_data_t
 	count := C.mach_msg_type_number_t(C.HOST_VM_INFO64_COUNT)
 
@@ -108,11 +101,10 @@ func (s *MemStatMetrics) Collect() {
 		return
 	}
 
-	s.Free.Set(float64(meminfo.free_count) * float64(s.Pagesize))
-	s.Active.Set(float64(meminfo.active_count) * float64(s.Pagesize))
-	s.Inactive.Set(float64(meminfo.inactive_count) * float64(s.Pagesize))
-	s.Wired.Set(float64(meminfo.wire_count) * float64(s.Pagesize))
-	s.Purgeable.Set(float64(meminfo.purgeable_count) * float64(s.Pagesize))
-	s.Total.Set(float64(C.get_phys_memory()))
-
+	s.free.Set(float64(meminfo.free_count) * float64(s.Pagesize))
+	s.active.Set(float64(meminfo.active_count) * float64(s.Pagesize))
+	s.inactive.Set(float64(meminfo.inactive_count) * float64(s.Pagesize))
+	s.wired.Set(float64(meminfo.wire_count) * float64(s.Pagesize))
+	s.purgeable.Set(float64(meminfo.purgeable_count) * float64(s.Pagesize))
+	s.total.Set(float64(C.get_phys_memory()))
 }
