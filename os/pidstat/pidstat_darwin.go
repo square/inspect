@@ -107,7 +107,7 @@ func (s *ProcessStat) Collect(collectAttributes bool) {
 	var tasks C.task_array_t
 	var taskCount C.mach_msg_type_number_t
 
-	if C.processor_set_default(c.hport, &pDefaultSet) != C.KERN_SUCCESS {
+	if C.processor_set_default(s.hport, &pDefaultSet) != C.KERN_SUCCESS {
 		return
 	}
 
