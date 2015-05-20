@@ -39,7 +39,7 @@ func main() {
 	flag.IntVar(&stepSec, "step", 2, "metrics are collected every step seconds")
 	flag.StringVar(&cnf, "cnf", "/root/.my.cnf", "configuration file")
 	flag.StringVar(&form, "form", "graphite", "output format of metrics to stdout")
-	flag.BoolVar(&human, "h", false,
+	flag.BoolVar(&human, "human", false,
 		"Makes output in MB for human readable sizes")
 	flag.StringVar(&group, "group", "", "group of metrics to collect")
 	flag.BoolVar(&loop, "loop", false,
