@@ -1,0 +1,28 @@
+{
+	"ImportPath": "github.com/square/inspect/mysql",
+	"GoVersion": "go1.2.1",
+	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/goconf/conf",
+			"Comment": "null-17",
+			"Rev": "a4db5c465ed1c5d7a1ca805593ac77c067920722"
+		},
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.2-97-g0cc29e9",
+			"Rev": "0cc29e9fe8e25c2c58cf47bcab566e029bbaa88b"
+		},
+		{
+			"ImportPath": "golang.org/x/tools/go/exact",
+			"Rev": "7d75e8b219c3efda2d08ae38acd6b42f8da4f5f9"
+		},
+		{
+			"ImportPath": "golang.org/x/tools/go/gcimporter",
+			"Rev": "7d75e8b219c3efda2d08ae38acd6b42f8da4f5f9"
+		},
+		{
+			"ImportPath": "golang.org/x/tools/go/types",
+			"Rev": "7d75e8b219c3efda2d08ae38acd6b42f8da4f5f9"
+		}
+	]
+}

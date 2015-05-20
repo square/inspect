@@ -1,0 +1,11 @@
+{
+	"ImportPath": "github.com/square/inspect/postgres",
+	"GoVersion": "go1.2.1",
+	"Deps": [
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Comment": "go1.0-cutoff-47-g93e9980",
+			"Rev": "93e9980741c9e593411b94e07d5bad8cfb4809db"
+		}
+	]
+}
