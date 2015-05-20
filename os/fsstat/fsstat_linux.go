@@ -16,11 +16,15 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
+// FSStat represents file system statistics for all filesystems found
+// on this OS
 type FSStat struct {
 	FS map[string]*PerFSStat
 	m  *metrics.MetricContext
 }
 
+// New registers with metriccontext and collects filesystem stats every
+// Step
 func New(m *metrics.MetricContext, Step time.Duration) *FSStat {
 	s := new(FSStat)
 	s.FS = make(map[string]*PerFSStat, 0)
@@ -77,22 +81,22 @@ func (s *FSStat) Collect() {
 }
 
 // Return list of file systems sorted by Usage
-type ByUsage []*PerFSStat
+type byUsage []*PerFSStat
 
-func (a ByUsage) Len() int           { return len(a) }
-func (a ByUsage) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByUsage) Less(i, j int) bool { return a[i].Usage() > a[j].Usage() }
+func (a byUsage) Len() int           { return len(a) }
+func (a byUsage) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a byUsage) Less(i, j int) bool { return a[i].Usage() > a[j].Usage() }
 
-// ByUsage() returns an slice of *PerDiskStat entries sorted
+// ByUsage returns an slice of *PerDiskStat entries sorted
 // by usage
-func (c *FSStat) ByUsage() []*PerFSStat {
-	v := make([]*PerFSStat, 0)
-	for _, o := range c.FS {
+func (s *FSStat) ByUsage() []*PerFSStat {
+	var v []*PerFSStat
+	for _, o := range s.FS {
 		if !math.IsNaN(o.Usage()) {
 			v = append(v, o)
 		}
 	}
-	sort.Sort(ByUsage(v))
+	sort.Sort(byUsage(v))
 	return v
 }
 
@@ -114,6 +118,7 @@ type PerFSStat struct {
 	FileUsagePct *metrics.Gauge
 }
 
+// NewPerFSStat registers with metriccontext for the particular filesystem
 func NewPerFSStat(m *metrics.MetricContext, mp string) *PerFSStat {
 	fs := new(PerFSStat)
 	fs.mp = mp
@@ -127,6 +132,7 @@ func (s *PerFSStat) Unregister() {
 	misc.UnregisterMetrics(s, s.m, "fsstat."+s.mp)
 }
 
+// Collect calls statfs and populates stats for a particular filesystem
 func (s *PerFSStat) Collect() {
 	// call statfs and populate metrics
 	buf := new(syscall.Statfs_t)
@@ -145,14 +151,14 @@ func (s *PerFSStat) Collect() {
 	s.FileUsagePct.Set(s.FileUsage())
 }
 
-// Filesystem block usage in percentage
+// Usage returns filesystem block usage in percentage
 func (s *PerFSStat) Usage() float64 {
 	total := s.Blocks.Get()
 	free := s.Bfree.Get()
 	return ((total - free) / total) * 100
 }
 
-// Filesystem file node usage in percentage
+// FileUsage returns filesystem files (inodes) usage in percentage
 func (s *PerFSStat) FileUsage() float64 {
 	total := s.Files.Get()
 	free := s.Ffree.Get()
