@@ -10,7 +10,6 @@ inspect aims to evolve to be an intelligent tool that
 can spot problems.
 
 Currently it can spot few easy ones:
-
   * process X is throttled on CPU because of cgroup restrictions
   * System wide resource usage problems (disk/cpu/mem/net)
 
@@ -24,17 +23,11 @@ Currently it can spot few easy ones:
 Package dependency is managed by godep (https://github.com/tools/godep). Follow the docs there when adding/removing/updating
 package dependencies.
 
-###### Documentation (WIP)
-
-http://godoc.org/github.com/square/inspect/inspect
-
+###### Documentation
 http://godoc.org/github.com/square/inspect/os
-
 http://godoc.org/github.com/square/inspect/metrics
 
-
 ###### Usage
-
 ###### Command line
 
 ./bin/inspect (run as root for IO statistics on Linux)
