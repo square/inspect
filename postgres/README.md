@@ -20,7 +20,7 @@ inspect gathers the following metrics:
 ##Installation
 
 1. Get Go
-2. `go get -v -u github.com/square/inspect/inspect-postgres`
+2. `go get -v -u github.com/square/inspect/postgres`
 
 ##Dependencies
 Package dependency is managed by godep (https://github.com/tools/godep). Follow the docs there when adding/removing/updating
@@ -63,13 +63,13 @@ _inspect-postgres_ can be run in server mode to run continuously and expose all 
 ###Example API Use
 
 
-```
+```go
 // Import packages
-import "github.com/square/prodeng/inspect-postgres"
-import "github.com/square/prodeng/metrics"
+import "github.com/square/inspect/postgres"
+import "github.com/square/inspect/metrics"
 
 // Initialize a metric context
-m := metrics.NewMetricContext("system")
+m := metrics.NewMetricContext("postgres")
 
 // Collect postgres metrics every m.Step seconds
 sqlstats := postgresstat.New(m, time.Millisecond*2000)
@@ -92,12 +92,7 @@ fmt.Println(sqltablestats.DBs["db1"].Tables["t1"].Metrics.SizeBytes.Get())
 TODO: write tests
 Packages are tested using Go's testing package.
 To test:
-1. cd to the directory containing the .go and _test.go files
-2. Run `go test`. You can also run with the `-v` option for a verbose output. For these tests, many logs are expected so stderr is redirected to a file `test.log` 
+  1. cd to the directory containing the .go and _test.go files
+  2. Run `go test`. You can also run with the `-v` option for a verbose output. For these tests, many logs are expected so stderr is redirected to a file `test.log` 
 
 Tests for each metric may be added to `postgresstat_test.go` and `postgresstat-tables_test.go`. These tests do not connect to a database. Instead, the desired test input is hard coded into each test. Testing for the parser for the Innodb metrics are located in `postgrestools_test.go`. 
-
-
-
-
-
