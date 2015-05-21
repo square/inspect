@@ -55,7 +55,7 @@ _inspect-mysql_ can be run in server mode to run continuously and expose all met
 
 ./bin/inspect-mysql -server -address :12345
 
-```
+```json
 [
 {"type": "counter", "name": "mysqlstat.Queries", "value": 9342251, "rate": 31.003152},
 {"type": "counter", "name": "mysqltablestat.database_name.table_name.RowsRead", "value": 0, "rate": 0.000000},
@@ -69,7 +69,7 @@ _inspect-mysql_ can be run in server mode to run continuously and expose all met
 ###Example API Use
 
 
-```
+```go
 // Import packages
 import "github.com/square/inspect/mysql"
 import "github.com/square/inspect/metrics"
