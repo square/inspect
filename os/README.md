@@ -1,33 +1,6 @@
 #### os
 os is a collection of libraries for gathering operating system metrics.
 
-######
-Implemented libraries:
-   * CPU usage 
-      * Platforms: Linux, MacOSX
-      * For linux, per cgroup information is included
-   * Memory usage
-      * Platforms: Linux, MacOSX
-      * For linux, per cgroup information is included
-   * Filesystem usage
-      * Platforms: Linux
-   * Interface usage
-      * Platforms: Linux
-   * IO subsystem usage
-      * Platforms: Linux
-   * TCP
-      * Platforms: Linux
-   * Per Process metrics
-     * Platforms: Linux, MacOSX
-     * On Linux
-       * CPU
-       * Memory
-       * IO (requires root)
-     * On MacOSX (requires root)
-       * CPU
-       * Memory
-   * Load average
-    * Platforms: Linux
   
 ###### Installation
 1. Get go
@@ -60,6 +33,35 @@ func main() {
 	fmt.Println("CPU usage (%) : ", (cstat.Usage()/cstat.Total())*100)
 }
 ```
+
+######
+Implemented libraries:
+   * CPU usage 
+      * Platforms: Linux, MacOSX
+      * For linux, per cgroup information is included
+   * Memory usage
+      * Platforms: Linux, MacOSX
+      * For linux, per cgroup information is included
+   * Filesystem usage
+      * Platforms: Linux
+   * Interface usage
+      * Platforms: Linux
+   * IO subsystem usage
+      * Platforms: Linux
+   * TCP
+      * Platforms: Linux
+   * Per Process metrics
+     * Platforms: Linux, MacOSX
+     * On Linux
+       * CPU
+       * Memory
+       * IO (requires root)
+     * On MacOSX (requires root)
+       * CPU
+       * Memory
+   * Load average
+    * Platforms: Linux
+    
 ###### Development
   * Designed to run as a long-lived process with minimal memory footprint - Re-use objects where possible.
   * Please run golint.
