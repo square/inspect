@@ -34,19 +34,7 @@ Implemented libraries:
 2. go get -v -u github.com/square/inspect/os/[module]
 
 ###### Documentation
-http://godoc.org/github.com/square/inspect/os/cpustat
-
-http://godoc.org/github.com/square/inspect/os/memstat
-
-http://godoc.org/github.com/square/inspect/os/pidstat
-
-http://godoc.org/github.com/square/inspect/os/tcpstat
-
-http://godoc.org/github.com/square/inspect/os/fsstat
-
-http://godoc.org/github.com/square/inspect/os/interfacestat
-
-http://godoc.org/github.com/square/inspect/os/loadstat
+http://godoc.org/github.com/square/inspect/os
 
 ###### Example API use 
 ```go
