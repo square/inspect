@@ -19,7 +19,7 @@ inspect gathers the following metrics:
 ##Installation
 
 1. Get Go
-2. `go get -v -u github.com/square/inspect/inspect-mysql`
+2. `go get -v -u github.com/square/inspect/mysql`
 
 ##Dependencies
 Package dependency is managed by godep (https://github.com/tools/godep). Follow the docs there when adding/removing/updating
@@ -71,11 +71,11 @@ _inspect-mysql_ can be run in server mode to run continuously and expose all met
 
 ```
 // Import packages
-import "github.com/square/prodeng/inspect-mysql"
-import "github.com/square/prodeng/metrics"
+import "github.com/square/inspect/mysql"
+import "github.com/square/inspect/metrics"
 
 // Initialize a metric context
-m := metrics.NewMetricContext("system")
+m := metrics.NewMetricContext("mysql")
 
 // Collect mysql metrics every m.Step seconds
 // Username and password may be left as "" if a config file is specified
@@ -272,12 +272,4 @@ To test:
 2. Run `go test`. You can also run with the `-v` option for a verbose output. For these tests, many logs are expected so stderr is redirected to a file `test.log` 
 
 Tests for each metric may be added to `mysqlstat_test.go` and `mysqlstat-tables_test.go`. These tests do not connect to a database. Instead, the desired test input is hard coded into each test. Testing for the parser for the Innodb metrics are located in `mysqltools_test.go`. 
-
-
-
-
-
-
-
-
 
