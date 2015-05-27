@@ -97,12 +97,12 @@ func (s *InterfaceStat) Collect() {
 	}
 }
 
-// ByUsage represents list of interfaces sorted by Usage
-type ByUsage []*PerInterfaceStat
+// byUsage represents list of interfaces sorted by Usage
+type byUsage []*PerInterfaceStat
 
-func (a ByUsage) Len() int      { return len(a) }
-func (a ByUsage) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByUsage) Less(i, j int) bool {
+func (a byUsage) Len() int      { return len(a) }
+func (a byUsage) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byUsage) Less(i, j int) bool {
 	return (a[i].RXBandwidth() + a[i].TXBandwidth()) > (a[j].RXBandwidth() + a[j].TXBandwidth())
 }
 
@@ -115,7 +115,7 @@ func (s *InterfaceStat) ByUsage() []*PerInterfaceStat {
 			v = append(v, o)
 		}
 	}
-	sort.Sort(ByUsage(v))
+	sort.Sort(byUsage(v))
 	return v
 }
 
