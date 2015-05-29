@@ -3,22 +3,22 @@
 package osmain
 
 import (
-	"github.com/square/inspect/metrics"
 	"time"
+
+	"github.com/square/inspect/metrics"
 )
 
 type darwinStats struct {
 }
 
-// RegisterOsDependent registers OS dependent statistics
-func RegisterOsDependent(
-	m *metrics.MetricContext, step time.Duration,
-	d *OsIndependentStats) *darwinStats {
-
+// RegisterOsSpecific registers OS dependent statistics
+func registerOsSpecific(m *metrics.MetricContext, step time.Duration,
+	osind *Stats) *darwinStats {
 	x := new(darwinStats)
 	return x
 }
 
-// PrintOsDependent prints OS dependent statistics
-func PrintOsDependent(d *darwinStats, batchmode bool) {
+// PrintOsSpecific prints OS dependent statistics
+func printOsSpecific(batchmode bool, layout *DisplayWidgets, v interface{}) {
+	stats, ok := v.(*darwinStats)
 }

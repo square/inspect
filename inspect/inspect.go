@@ -13,23 +13,79 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/gizak/termui"
 	"github.com/square/inspect/inspect/osmain"
 	"github.com/square/inspect/metrics"
-	"github.com/square/inspect/os/cpustat"
-	"github.com/square/inspect/os/memstat"
-	"github.com/square/inspect/os/misc"
-	"github.com/square/inspect/os/pidstat"
-	"github.com/mgutz/ansi"
 )
 
-// Number of Pids to display for top-N metrics
-const DisplayPidCount = 3
+var layout *osmain.DisplayWidgets
+var evt <-chan termui.Event
 
-func truncate(s string, n int) string {
-	if len(s) > n {
-		return s[:n]
+func setupDisplay() *osmain.DisplayWidgets {
+	err := termui.Init()
+	termui.UseTheme("helloworld")
+	if err != nil {
+		log.Fatalf("Unable to initialize termui", err) // exits with 1
 	}
-	return s
+	layout := new(osmain.DisplayWidgets)
+	layout.Summary = termui.NewPar("Gathering statistics ...")
+	layout.Summary.Height = 3
+	help := termui.NewPar("Press q to quit")
+	help.Height = 3
+	layout.ProcessesByCPU = termui.NewList()
+	layout.ProcessesByCPU.Height = 5
+	layout.ProcessesByCPU.Border.Label = "CPU"
+	layout.ProcessesByMemory = termui.NewList()
+	layout.ProcessesByMemory.Height = 5
+	layout.ProcessesByMemory.Border.Label = "Memory"
+	layout.ProcessesByIO = termui.NewList()
+	layout.ProcessesByIO.Height = 5
+	layout.ProcessesByIO.Border.Label = "IO"
+	layout.DiskIOUsage = termui.NewList()
+	layout.DiskIOUsage.Height = 5
+	layout.DiskIOUsage.Border.Label = "Disk IO usage"
+	layout.FileSystemUsage = termui.NewList()
+	layout.FileSystemUsage.Height = 5
+	layout.FileSystemUsage.Border.Label = "Filesystem usage"
+	layout.InterfaceUsage = termui.NewList()
+	layout.InterfaceUsage.Height = 5
+	layout.InterfaceUsage.Border.Label = "Network usage"
+	layout.CgroupsCPU = termui.NewList()
+	layout.CgroupsCPU.Height = 10
+	layout.CgroupsCPU.Border.Label = "CPU(cgroups)"
+	layout.CgroupsMem = termui.NewList()
+	layout.CgroupsMem.Height = 10
+	layout.CgroupsMem.Border.Label = "Memory(cgroups)"
+	layout.Problems = termui.NewList()
+	layout.Problems.Height = 10
+	layout.Problems.Border.Label = "Problems"
+	termui.Body.AddRows(
+		termui.NewRow(
+			termui.NewCol(8, 0, layout.Summary),
+			termui.NewCol(4, 0, help)),
+		termui.NewRow(
+			termui.NewCol(6, 0, layout.ProcessesByCPU),
+			termui.NewCol(6, 0, layout.ProcessesByMemory)),
+		termui.NewRow(
+			termui.NewCol(8, 0, layout.ProcessesByIO),
+			termui.NewCol(4, 0, layout.DiskIOUsage)),
+		termui.NewRow(
+			termui.NewCol(6, 0, layout.FileSystemUsage),
+			termui.NewCol(6, 0, layout.InterfaceUsage)),
+		termui.NewRow(
+			termui.NewCol(6, 0, layout.CgroupsCPU),
+			termui.NewCol(6, 0, layout.CgroupsMem)),
+		termui.NewRow(termui.NewCol(12, 0, layout.Problems)))
+	termui.Body.Width = termui.TermWidth()
+	termui.Body.Align()
+	termui.Render(termui.Body)
+	return layout
+}
+
+func refreshUI() {
+	termui.Body.Width = termui.TermWidth()
+	termui.Body.Align()
+	termui.Render(termui.Body)
 }
 
 func main() {
@@ -64,42 +120,15 @@ func main() {
 	}
 
 	if !batchmode {
-		fmt.Println("Gathering statistics......")
+		layout = setupDisplay()
+		evt = termui.EventCh()
 	}
-
 	// Initialize a metric context
 	m := metrics.NewMetricContext("system")
-
 	// Default step for collectors
 	step := time.Millisecond * time.Duration(stepSec) * 1000
-
-	// Collect cpu/memory/disk/per-pid metrics
-	cstat := cpustat.New(m, step)
-	mstat := memstat.New(m, step)
-	procs := pidstat.NewProcessStat(m, step)
-
-	// Filter processes which have < 1% of a CPU or < 1% memory
-	procs.SetPidFilter(pidstat.PidFilterFunc(func(p *pidstat.PerProcessStat) bool {
-		memUsagePct := (p.MemUsage() / mstat.Total()) * 100.0
-		if p.CPUUsage() > 0.01 || memUsagePct > 1 {
-			return true
-		}
-		return false
-	}))
-
-	// pass the collected metrics to OS dependent set if they
-	// need it
-	osind := new(osmain.OsIndependentStats)
-	osind.Cstat = cstat
-	osind.Mstat = mstat
-	osind.Procs = procs
-
-	// register os dependent metrics
-	// these could be specific to the OS (say cgroups)
-	// or stats which are implemented not on all supported
-	// platforms yet
-	d := osmain.RegisterOsDependent(m, step, osind)
-
+	// Register various stats we are interested in tracking
+	stats := osmain.Register(m, step)
 	// run http server
 	if servermode {
 		go func() {
@@ -108,90 +137,37 @@ func main() {
 		}()
 	}
 
-	// command line refresh every 2 step
-	ticker := time.NewTicker(step * 2)
 	iterationsRun := 0
-	for _ = range ticker.C {
-
-		// Problems
+	for {
+		if !batchmode {
+			// handle keypresses in interactive mode
+			select {
+			case e := <-evt:
+				if e.Type == termui.EventKey && e.Ch == 'q' {
+					termui.Close()
+					return
+				}
+				if e.Type == termui.EventResize {
+					refreshUI()
+				}
+			default:
+				break // breaks out of select
+			}
+		}
+		// Clear previous problems
 		var problems []string
-
+		stats.Problems = problems
 		// Quit after n iterations if specified
 		iterationsRun++
 		if nIter > 0 && iterationsRun > nIter {
 			break
 		}
-
+		stats.Print(batchmode, layout)
 		if !batchmode {
-			fmt.Printf("\033[2J") // clear screen
-			fmt.Printf("\033[H")  // move cursor top left top
+			refreshUI()
 		}
-
-		memPctUsage := (mstat.Usage() / mstat.Total()) * 100
-		cpuPctUsage := (cstat.Usage() / cstat.Total()) * 100
-		cpuUserspacePctUsage := (cstat.UserSpace() / cstat.Total()) * 100
-		cpuKernelPctUsage := (cstat.Kernel() / cstat.Total()) * 100
-		fmt.Println(fmt.Sprintf("total: cpu: %3.1f%% user: %3.1f%%, kernel: %3.1f%%, mem: %3.1f%%",
-			cpuPctUsage, cpuUserspacePctUsage, cpuKernelPctUsage, memPctUsage))
-
-		if cpuPctUsage > 80.0 {
-			problems = append(problems, "CPU usage > 80%")
-		}
-		if cpuKernelPctUsage > 30.0 {
-			problems = append(problems, "CPU usage in kernel > 30%")
-		}
-		if memPctUsage > 80.0 {
-			problems = append(problems, "Memory usage > 80%")
-		}
-
-		// Top processes by usage
-		procsByCPUUsage := procs.ByCPUUsage()
-		procsByMemUsage := procs.ByMemUsage()
-		n := DisplayPidCount
-		if len(procsByCPUUsage) < n {
-			n = len(procsByCPUUsage)
-		}
-		if len(procsByMemUsage) < n {
-			n = len(procsByMemUsage)
-		}
-		// reverse colors
-		fmt.Println("\033[7m")
-		fmt.Println(fmt.Sprintf("%8s %10s %10s %8s | %8s %10s %10s %8s",
-			"CPU",
-			"COMMAND",
-			"USER",
-			"PID",
-			"MEM",
-			"COMMAND",
-			"USER",
-			"PID"), ansi.ColorCode("reset"))
-		for i := 0; i < n; i++ {
-			cpuUsagePct := (procsByCPUUsage[i].CPUUsage() / cstat.Total()) * 100
-			fmt.Println(fmt.Sprintf("%8s %10s %10s %8s | %8s %10s %10s %8s",
-				fmt.Sprintf("%3.1f%%", cpuUsagePct),
-				truncate(procsByCPUUsage[i].Comm(), 10),
-				truncate(procsByCPUUsage[i].User(), 10),
-				procsByCPUUsage[i].Pid(),
-				misc.ByteSize(procsByMemUsage[i].MemUsage()),
-				truncate(procsByMemUsage[i].Comm(), 10),
-				truncate(procsByMemUsage[i].User(), 10),
-				procsByMemUsage[i].Pid()))
-		}
-		for i := n; i < DisplayPidCount; i++ {
-			fmt.Println(fmt.Sprintf("%8s %10s %10s %8s | %8s %10s %10s %8s",
-				"-", "-", "-", "-", "-", "-", "-", "-"))
-		}
-
-		osmain.PrintOsDependent(d, batchmode)
-
-		for i := range problems {
-			msg := problems[i]
-			if !batchmode {
-				msg = ansi.Color(msg, "red")
-			}
-			fmt.Println("Problem: ", msg)
-		}
-
+		// sleep for step
+		time.Sleep(step / 2)
 		// be aggressive about reclaiming memory
 		// tradeoff with CPU usage
 		runtime.GC()
