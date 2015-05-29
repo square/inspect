@@ -164,7 +164,7 @@ func main() {
 		}
 		stats.Print(batchmode, layout)
 		if !batchmode {
-			refreshUI()
+			termui.Render(termui.Body)
 		}
 		// sleep for step
 		time.Sleep(step / 2)
