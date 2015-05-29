@@ -17,6 +17,8 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
+var root = "/"
+
 // DiskStat represents statistics collected for all disks (block devices) present
 // on the current operating system.
 type DiskStat struct {
@@ -66,7 +68,7 @@ func (s *DiskStat) ByUsage() []*PerDiskStat {
 func (s *DiskStat) RefreshBlkDevList() {
 	var blkdevs = make(map[string]bool)
 	// block devices
-	o, err := ioutil.ReadDir("/sys/block")
+	o, err := ioutil.ReadDir(root + "sys/block")
 	if err == nil {
 		for _, d := range o {
 			blkdevs[path.Base(d.Name())] = true
@@ -77,7 +79,7 @@ func (s *DiskStat) RefreshBlkDevList() {
 
 // Collect walks through /proc/diskstats and updates relevant metrics
 func (s *DiskStat) Collect() {
-	file, err := os.Open("/proc/diskstats")
+	file, err := os.Open(root + "proc/diskstats")
 	defer file.Close()
 	if err != nil {
 		return
@@ -105,7 +107,7 @@ func (s *DiskStat) Collect() {
 			o = NewPerDiskStat(s.m, blkdev)
 			s.Disks[blkdev] = o
 		}
-		sectorSize := misc.ReadUintFromFile("/sys/block/" + blkdev + "/queue/hw_sector_size")
+		sectorSize := misc.ReadUintFromFile(root + "sys/block/" + blkdev + "/queue/hw_sector_size")
 		o.ReadCompleted.Set(f[0])
 		o.ReadMerged.Set(f[1])
 		o.ReadSectors.Set(f[2])
