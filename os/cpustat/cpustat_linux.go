@@ -14,6 +14,10 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
+// root is the root of filesystem that hosts proc. This makes
+// testing a bit easier
+var root = "/"
+
 // CPUStat represents metric information about all CPUs
 type CPUStat struct {
 	All  *PerCPU
@@ -40,7 +44,7 @@ func New(m *metrics.MetricContext, Step time.Duration) *CPUStat {
 // statistics
 // XXX: break this up into two smaller functions
 func (s *CPUStat) Collect() {
-	file, err := os.Open("/proc/stat")
+	file, err := os.Open(root + "proc/stat")
 	defer file.Close()
 
 	if err != nil {
