@@ -20,5 +20,4 @@ func registerOsSpecific(m *metrics.MetricContext, step time.Duration,
 
 // PrintOsSpecific prints OS dependent statistics
 func printOsSpecific(batchmode bool, layout *DisplayWidgets, v interface{}) {
-	stats, ok := v.(*darwinStats)
 }
