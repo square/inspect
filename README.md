@@ -15,7 +15,9 @@ Please see subdirectories for more detailed documentation
 
 #### Glossary
 * cmd - Directory for command line programs based on the below libraries
-![](https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/summary.png)
+
+<img src="https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/summary.png" height="259" width="208">
+
 * os      - Operating system metric measurement libraries used by inspect.
 * mysql   - MySQL metric reporting libraries.
 * postgres  - Postgres metric reporting libraries.
