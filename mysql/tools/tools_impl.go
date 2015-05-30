@@ -97,14 +97,14 @@ func (database *mysqlDB) makeQuery(query string) ([]string, [][]string, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		for i, col := range tmp_values {
+		for i, col := range tmpValues {
 			str := string(col)
 			values[i] = append(values[i], str)
 		}
 	}
 	err = rows.Err()
 
-	return column_names, values, nil
+	return columnNames, values, nil
 }
 
 func (database *mysqlDB) SetMaxConnections(maxConns int) {
@@ -191,10 +191,10 @@ func New(user, password, host, config string) (MysqlDB, error) {
 	_, err := os.Stat(iniFile)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return database, errors.New("'" + ini_file + "' does not exist")
+		return database, errors.New("'" + iniFile + "' does not exist")
 	}
 	// read ini file to get password
-	c, err := conf.ReadConfigFile(ini_file)
+	c, err := conf.ReadConfigFile(iniFile)
 	if err != nil {
 		return database, err
 	}
