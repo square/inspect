@@ -22,3 +22,12 @@ Please see subdirectories for more detailed documentation
 * mysql   - MySQL metric reporting libraries.
 * postgres  - Postgres metric reporting libraries.
 * metrics/metricscheck - Simple metrics libraries for golang.
+
+#### Development
+* Please run gofmt and golint before submitting PRs
+
+1. go fmt ./...
+2. golint ./...
+
+* Please do impact testing of new code - It is desirable to not impact the thing
+we are supposed to monitor :)

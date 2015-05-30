@@ -91,7 +91,6 @@ func TestBasicCounterInc(t *testing.T) {
 	}
 }
 
-
 func TestStatsTimer(t *testing.T) {
 	s := NewStatsTimer(time.Millisecond, 100) // keep 100 samples
 	var wg sync.WaitGroup
