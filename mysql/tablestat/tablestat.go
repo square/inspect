@@ -49,14 +49,13 @@ type MysqlStatTables struct {
 	wg    sync.WaitGroup
 }
 
-//database stats struct
-//contains metrics for databases and map to tables stats struct
+// DBStats represents struct that contains metrics for databases and map to tables stats struct
 type DBStats struct {
 	Tables  map[string]*MysqlStatPerTable
 	Metrics *MysqlStatPerDB
 }
 
-//  MysqlStatPerTable - metrics for each table
+// MysqlStatPerTable represents metrics for each table
 type MysqlStatPerTable struct {
 	SizeBytes           *metrics.Gauge
 	RowsRead            *metrics.Counter
@@ -69,8 +68,8 @@ type MysqlStatPerDB struct {
 	SizeBytes *metrics.Gauge
 }
 
-//initializes mysqlstat
-//takes as input: metrics context, username, password, path to config file for
+// New initializes mysqlstat and returns it
+// arguments: metrics context, username, password, path to config file for
 // mysql. username and password can be left as "" if a config file is specified.
 func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlStatTables, error) {
 	s := new(MysqlStatTables)
@@ -88,7 +87,7 @@ func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlS
 	return s, nil
 }
 
-// Set the max number of concurrent connections that the mysql client can use
+// SetMaxConnections sets the max number of concurrent connections that the mysql client can use
 func (s *MysqlStatTables) SetMaxConnections(maxConns int) {
 	s.db.SetMaxConnections(maxConns)
 }
@@ -108,7 +107,7 @@ func newMysqlStatPerTable(m *metrics.MetricContext, dbname, tblname string) *Mys
 	return o
 }
 
-//collects metrics.
+// Collect collects various database/table metrics
 // sql.DB is thread safe so launching metrics collectors
 // in their own goroutines is safe
 func (s *MysqlStatTables) Collect() {
@@ -148,7 +147,7 @@ func (s *MysqlStatTables) checkTable(dbname, tblname string) {
 	return
 }
 
-//gets sizes of databases
+// GetDBSizes collects information about sizes of databases
 func (s *MysqlStatTables) GetDBSizes() {
 	res, err := s.db.QueryReturnColumnDict(innodbMetadataCheck)
 	if err != nil {
@@ -187,7 +186,7 @@ func (s *MysqlStatTables) GetDBSizes() {
 	return
 }
 
-//gets sizes of tables within databases
+// GetTableSizes collects sizes of tables within databases
 func (s *MysqlStatTables) GetTableSizes() {
 	res, err := s.db.QueryReturnColumnDict(innodbMetadataCheck)
 	if err != nil {
@@ -210,8 +209,8 @@ func (s *MysqlStatTables) GetTableSizes() {
 		s.wg.Done()
 		return
 	}
-	tbl_count := len(res["tbl"])
-	for i := 0; i < tbl_count; i++ {
+	tableCount := len(res["tbl"])
+	for i := 0; i < tableCount; i++ {
 		dbname := string(res["db"][i])
 		tblname := string(res["tbl"][i])
 		if res["tbl_size_bytes"][i] == "" {
@@ -233,7 +232,7 @@ func (s *MysqlStatTables) GetTableSizes() {
 	return
 }
 
-//get table statistics: rows read, rows changed, rows changed x indices
+// GetTableStatistics collects table statistics: rows read, rows changed, rows changed x indices
 func (s *MysqlStatTables) GetTableStatistics() {
 	res, err := s.db.QueryReturnColumnDict(tblStatisticsQuery)
 	if len(res) == 0 || err != nil {
@@ -243,37 +242,37 @@ func (s *MysqlStatTables) GetTableStatistics() {
 	}
 	for i, tblname := range res["tbl"] {
 		dbname := res["db"][i]
-		rows_read, err := strconv.ParseInt(res["rows_read"][i], 10, 64)
+		rowsRead, err := strconv.ParseInt(res["rows_read"][i], 10, 64)
 		if err != nil {
 			s.db.Log(err)
 		}
-		rows_changed, err := strconv.ParseInt(res["rows_changed"][i], 10, 64)
+		rowsChanged, err := strconv.ParseInt(res["rows_changed"][i], 10, 64)
 		if err != nil {
 			s.db.Log(err)
 		}
-		rows_changed_x_indexes, err := strconv.ParseInt(res["rows_changed_x_indexes"][i], 10, 64)
+		rowsChangedXIndexes, err := strconv.ParseInt(res["rows_changed_x_indexes"][i], 10, 64)
 		if err != nil {
 			s.db.Log(err)
 		}
-		if rows_read > 0 {
+		if rowsRead > 0 {
 			s.checkDB(dbname)
 			s.checkTable(dbname, tblname)
 			s.nLock.Lock()
-			s.DBs[dbname].Tables[tblname].RowsRead.Set(uint64(rows_read))
+			s.DBs[dbname].Tables[tblname].RowsRead.Set(uint64(rowsRead))
 			s.nLock.Unlock()
 		}
-		if rows_changed > 0 {
+		if rowsChanged > 0 {
 			s.checkDB(dbname)
 			s.checkTable(dbname, tblname)
 			s.nLock.Lock()
-			s.DBs[dbname].Tables[tblname].RowsChanged.Set(uint64(rows_changed))
+			s.DBs[dbname].Tables[tblname].RowsChanged.Set(uint64(rowsChanged))
 			s.nLock.Unlock()
 		}
-		if rows_changed_x_indexes > 0 {
+		if rowsChangedXIndexes > 0 {
 			s.checkDB(dbname)
 			s.checkTable(dbname, tblname)
 			s.nLock.Lock()
-			s.DBs[dbname].Tables[tblname].RowsChangedXIndexes.Set(uint64(rows_changed_x_indexes))
+			s.DBs[dbname].Tables[tblname].RowsChangedXIndexes.Set(uint64(rowsChangedXIndexes))
 			s.nLock.Unlock()
 		}
 	}
@@ -281,12 +280,12 @@ func (s *MysqlStatTables) GetTableStatistics() {
 	return
 }
 
-//Closes connection with database
+// Close closes connection with database
 func (s *MysqlStatTables) Close() {
 	s.db.Close()
 }
 
-//CallByMethodName searches for a method implemented
+// CallByMethodName searches for a method implemented
 // by s with name. Runs all methods that match names.
 func (s *MysqlStatTables) CallByMethodName(name string) error {
 	r := reflect.TypeOf(s)
@@ -306,8 +305,7 @@ func (s *MysqlStatTables) CallByMethodName(name string) error {
 	return nil
 }
 
-//writes metrics in the form
-// "metric_name metric_value"
+// FormatGraphite writes metrics in the form "metric_name metric_value"
 // to the input writer
 func (s *MysqlStatTables) FormatGraphite(w io.Writer) error {
 	for dbname, db := range s.DBs {

@@ -20,7 +20,7 @@ import (
 
 // sql packages and driver
 import "database/sql"
-import _ "github.com/go-sql-driver/mysql"
+import _ "github.com/go-sql-driver/mysql" // mysql driver
 
 type mysqlDB struct {
 	db        *sql.DB
@@ -28,16 +28,20 @@ type mysqlDB struct {
 }
 
 const (
-	DEFAULT_MYSQL_USER = "root"
-	MAX_RETRIES        = 5
+	// DefaultMySQLUser is the default user to use to connect to the database
+	DefaultMySQLUser = "root"
+	// MaxRetries is the number of retries made while connecting
+	MaxRetries = 5
 )
 
+// Config represents configuration (password) required for client
 type Config struct {
 	Client struct {
 		Password string
 	}
 }
 
+// InnodbStats represents information about InnoDB
 type InnodbStats struct {
 	FileIO           map[string]string
 	Log              map[string]string
@@ -50,14 +54,13 @@ type InnodbStats struct {
 // retry connecting to the db and make the query
 func (database *mysqlDB) queryDb(query string) ([]string, [][]string, error) {
 	var err error
-	for attempts := 0; attempts <= MAX_RETRIES; attempts++ {
+	for attempts := 0; attempts <= MaxRetries; attempts++ {
 		err = database.db.Ping()
 		if err == nil {
 			if cols, data, err := database.makeQuery(query); err == nil {
 				return cols, data, nil
-			} else {
-				return nil, nil, err
 			}
+			return nil, nil, err
 		}
 		database.db.Close()
 		database.db, err = sql.Open("mysql", database.dsnString)
@@ -75,18 +78,18 @@ func (database *mysqlDB) makeQuery(query string) ([]string, [][]string, error) {
 		return nil, nil, err
 	}
 
-	column_names, err := rows.Columns()
+	columnNames, err := rows.Columns()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	columns := len(column_names)
+	columns := len(columnNames)
 	values := make([][]string, columns)
-	tmp_values := make([]sql.RawBytes, columns)
+	tmpValues := make([]sql.RawBytes, columns)
 
 	scanArgs := make([]interface{}, len(values))
 	for i := range values {
-		scanArgs[i] = &tmp_values[i]
+		scanArgs[i] = &tmpValues[i]
 	}
 
 	for rows.Next() {
@@ -108,11 +111,11 @@ func (database *mysqlDB) SetMaxConnections(maxConns int) {
 	database.db.SetMaxOpenConns(maxConns)
 }
 
-//return values of query in a mapping of column_name -> column
+// QueryReturnColumnDict returns values of query in a mapping of column_name -> column
 func (database *mysqlDB) QueryReturnColumnDict(query string) (map[string][]string, error) {
-	column_names, values, err := database.queryDb(query)
+	columnNames, values, err := database.queryDb(query)
 	result := make(map[string][]string)
-	for i, col := range column_names {
+	for i, col := range columnNames {
 		result[col] = values[i]
 	}
 	return result, err
@@ -157,8 +160,8 @@ func makeDsn(dsn map[string]string) string {
 	return dsnString
 }
 
-// create connection to mysql database here
-// when an error is encountered, still return database so that the logger may be used
+// New create connection to mysql database here
+// if an error is encountered, still return database so that the logger may be used
 func New(user, password, host, config string) (MysqlDB, error) {
 
 	dsn := map[string]string{"dbname": "information_schema"}
@@ -167,8 +170,8 @@ func New(user, password, host, config string) (MysqlDB, error) {
 	database := &mysqlDB{}
 
 	if user == "" {
-		user = DEFAULT_MYSQL_USER
-		dsn["user"] = DEFAULT_MYSQL_USER
+		user = DefaultMySQLUser
+		dsn["user"] = DefaultMySQLUser
 	} else {
 		dsn["user"] = user
 	}
@@ -181,11 +184,11 @@ func New(user, password, host, config string) (MysqlDB, error) {
 	dsn["host"] = host
 
 	//Parse ini file to get password
-	ini_file := creds[user]
+	iniFile := creds[user]
 	if config != "" {
-		ini_file = config
+		iniFile = config
 	}
-	_, err := os.Stat(ini_file)
+	_, err := os.Stat(iniFile)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return database, errors.New("'" + ini_file + "' does not exist")
@@ -226,7 +229,7 @@ func (database *mysqlDB) Close() {
 	database.db.Close()
 }
 
-//Parse results from "SHOW ENGINE INNODB STATUS" query
+// ParseInnodbStats parses results from "SHOW ENGINE INNODB STATUS" query
 func ParseInnodbStats(blob string) (*InnodbStats, error) {
 	idb := new(InnodbStats)
 	idb.Metrics = make(map[string]string)
@@ -320,8 +323,8 @@ func (idb *InnodbStats) parseBufferPoolAndMem(blob string) {
 					if _, ok := idb.Metrics[key]; ok {
 						continue
 					}
-					key_len := len(strings.Split(key, "_"))
-					idb.Metrics[key] = strings.Trim(strings.Split(strings.Join(words[key_len:], ""), "(")[0], " \n\t\f\r")
+					keyLen := len(strings.Split(key, "_"))
+					idb.Metrics[key] = strings.Trim(strings.Split(strings.Join(words[keyLen:], ""), "(")[0], " \n\t\f\r")
 				} else if m, _ := regexp.MatchString("Buffer pool hit rate", line); m {
 					line := strings.Split(line, ",")[0]
 					words := strings.Split(line, " ")
@@ -337,7 +340,7 @@ func (idb *InnodbStats) parseBufferPoolAndMem(blob string) {
 }
 
 func (idb *InnodbStats) parseTransactions(blob string) {
-	trxes_not_started := 0
+	trxesNotStarted := 0
 	undo := 0
 	lines := strings.Split(blob, "\n")
 	rollbackexpr := "^ROLLING BACK \\d+ lock struct\\(s\\), heap size \\d+, \\d+ row lock\\(s\\), undo log entries (\\d+)"
@@ -353,9 +356,9 @@ func (idb *InnodbStats) parseTransactions(blob string) {
 			key := strings.ToLower(strings.Join(words[:len(words)-2], "_"))
 			idb.Metrics[key] = words[len(words)-1]
 		} else if m, _ := regexp.MatchString("TRANSACTION (.*) not started", line); m {
-			trxes_not_started += 1
+			trxesNotStarted++
 		}
 	}
-	idb.Metrics["trxes_not_started"] = strconv.Itoa(trxes_not_started)
+	idb.Metrics["trxesNotStarted"] = strconv.Itoa(trxesNotStarted)
 	idb.Metrics["undo"] = strconv.Itoa(undo)
 }
