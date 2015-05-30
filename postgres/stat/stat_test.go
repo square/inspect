@@ -87,8 +87,7 @@ func initPostgresStat() *PostgresStat {
 	s.m = metrics.NewMetricContext("system")
 	s.Modes = make(map[string]*ModeMetrics)
 	s.DBs = make(map[string]*DBMetrics)
-	s.Metrics = PostgresStatMetricsNew(s.m,
-		time.Millisecond*time.Duration(1)*1000)
+	s.Metrics = PostgresStatMetricsNew(s.m)
 	s.dbLock = &sync.Mutex{}
 	s.modeLock = &sync.Mutex{}
 	s.pidCol = "procpid"
