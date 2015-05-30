@@ -1,5 +1,6 @@
 package tools
 
+// MysqlDB interface defines few common methods used
 type MysqlDB interface {
 	// set the max number of database connections allowed at once
 	SetMaxConnections(maxConns int)

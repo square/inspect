@@ -52,7 +52,7 @@ type TableMetrics struct {
 	SizeBytes *metrics.Gauge
 }
 
-//PostgresStatMetrics
+// PostgresStatMetrics represents metrics collected for postgres database
 type PostgresStatMetrics struct {
 	Uptime               *metrics.Counter
 	Version              *metrics.Gauge
@@ -158,7 +158,7 @@ const (
 	securityQuery = "SELECT usename FROM pg_shadow WHERE passwd IS NULL;"
 )
 
-//Opens connection to postgres database and starts collector for metrics
+// New opens connection to postgres database and starts collector for metrics
 func New(m *metrics.MetricContext, user, config string) (*PostgresStat, error) {
 	s := new(PostgresStat)
 
@@ -185,12 +185,12 @@ func New(m *metrics.MetricContext, user, config string) (*PostgresStat, error) {
 	return s, nil
 }
 
-//Closes database connection
+// Close closes database connection
 func (s *PostgresStat) Close() {
 	s.db.Close()
 }
 
-//Initializes PostgresStatMetrics
+// PostgresStatMetricsNew initializes PostgresStatMetrics
 func PostgresStatMetricsNew(m *metrics.MetricContext) *PostgresStatMetrics {
 	c := new(PostgresStatMetrics)
 	misc.InitializeMetrics(c, m, "postgresstat", true)
@@ -232,7 +232,7 @@ func (s *PostgresStat) checkTable(dbname, tblname string) {
 	s.dbLock.Unlock()
 }
 
-//runs metrics collections
+// Collect runs metrics collections
 func (s *PostgresStat) Collect() {
 	s.wg.Add(1)
 	s.getVersion()
@@ -579,9 +579,9 @@ func (s *PostgresStat) getVacuumsInProgress() {
 		//TODO: extras
 		if len(m) > 0 {
 			if strings.HasPrefix(querC, "autovacuum:") {
-				auto += 1
+				auto++
 			} else {
-				manual += 1
+				manual++
 			}
 		}
 	}
@@ -689,7 +689,7 @@ func (s *PostgresStat) getSizes() {
 		if len(cols) < 5 {
 			continue
 		}
-		count += 1
+		count++
 		tmp, _ := strconv.ParseFloat(cols[4], 64)
 		total += tmp
 	}
@@ -720,7 +720,7 @@ func (s *PostgresStat) getSizes() {
 	}
 
 	//get table sizes
-	for dbname, _ := range res {
+	for dbname := range res {
 		newDsn := make(map[string]string)
 		for k, v := range s.dsn {
 			newDsn[k] = v
@@ -769,7 +769,7 @@ func (s *PostgresStat) getBackups() {
 		}
 		command := strings.Join(words[10:], " ")
 		if strings.Contains(command, "pg_dump") {
-			backupProcs += 1
+			backupProcs++
 		}
 	}
 	s.Metrics.BackupsRunning.Set(float64(backupProcs))

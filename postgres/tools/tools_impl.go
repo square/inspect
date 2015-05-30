@@ -11,11 +11,12 @@ import (
 	"strconv"
 	"strings"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // database driver for postgres
 )
 
 const (
-	MAX_RETRIES = 5
+	// MaxRetries is the number of retries for connecting
+	MaxRetries = 5
 )
 
 type postgresDB struct {
@@ -28,14 +29,13 @@ type postgresDB struct {
 // retry connecting to the db and make the query
 func (database *postgresDB) queryDb(query string) ([]string, [][]string, error) {
 	var err error
-	for attempts := 0; attempts <= MAX_RETRIES; attempts++ {
+	for attempts := 0; attempts <= MaxRetries; attempts++ {
 		err = database.db.Ping()
 		if err == nil {
 			if cols, data, err := database.makeQuery(query); err == nil {
 				return cols, data, nil
-			} else {
-				return nil, nil, err
 			}
+			return nil, nil, err
 		}
 		database.db.Close()
 		database.db, err = sql.Open("postgres", database.dsnString)
@@ -53,18 +53,18 @@ func (database *postgresDB) makeQuery(query string) ([]string, [][]string, error
 		return nil, nil, err
 	}
 
-	column_names, err := rows.Columns()
+	columnNames, err := rows.Columns()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	columns := len(column_names)
+	columns := len(columnNames)
 	values := make([][]string, columns)
-	tmp_values := make([]sql.RawBytes, columns)
+	tmpValues := make([]sql.RawBytes, columns)
 
 	scanArgs := make([]interface{}, len(values))
 	for i := range values {
-		scanArgs[i] = &tmp_values[i]
+		scanArgs[i] = &tmpValues[i]
 	}
 
 	for rows.Next() {
@@ -72,21 +72,21 @@ func (database *postgresDB) makeQuery(query string) ([]string, [][]string, error
 		if err != nil {
 			return nil, nil, err
 		}
-		for i, col := range tmp_values {
+		for i, col := range tmpValues {
 			str := string(col)
 			values[i] = append(values[i], str)
 		}
 	}
 	err = rows.Err()
 
-	return column_names, values, nil
+	return columnNames, values, nil
 }
 
 //return values of query in a mapping of column_name -> column
 func (database *postgresDB) QueryReturnColumnDict(query string) (map[string][]string, error) {
-	column_names, values, err := database.queryDb(query)
+	columnNames, values, err := database.queryDb(query)
 	result := make(map[string][]string)
-	for i, col := range column_names {
+	for i, col := range columnNames {
 		result[col] = values[i]
 	}
 	return result, err
@@ -115,9 +115,9 @@ func New(dsn map[string]string) (PostgresDB, error) {
 	pgdb := &postgresDB{}
 
 	//parse password file for password
-	conf_file := "/var/lib/pgsql/.pgpass"
-	_, err := os.Stat(conf_file)
-	file, err := os.Open(conf_file)
+	configFile := "/var/lib/pgsql/.pgpass"
+	_, err := os.Stat(configFile)
+	file, err := os.Open(configFile)
 
 	data := make([]byte, 100)
 	_, err = file.Read(data)

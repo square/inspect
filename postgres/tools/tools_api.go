@@ -1,5 +1,6 @@
 package tools
 
+// PostgresDB represents an interface for common methods
 type PostgresDB interface {
 	// makes query to database
 	// returns result as a mapping of strings to string arrays
