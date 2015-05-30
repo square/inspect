@@ -1,5 +1,5 @@
 inspect is a collection of operating system/application monitoring
-analysis libraries and utilities. 
+analysis libraries and utilities with an emphasis on problem detection.
 
 #### Installation
   1. get go
