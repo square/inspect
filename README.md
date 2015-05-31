@@ -5,7 +5,7 @@ analysis libraries and utilities with an emphasis on problem detection.
   1. get go
   2. go get -u -v github.com/square/inspect/...
   
-The above commands should install three binaries.
+The above commands should install three binaries in your $GOPATH/bin directory.
 
 1. inspect 
 2. inspect-mysql (work in progress)
@@ -25,9 +25,7 @@ Please see subdirectories for more detailed documentation
 
 #### Development
 * Please run gofmt and golint before submitting PRs
-
-1. go fmt ./...
-2. golint ./...
-
+  1. go fmt ./...
+  2. $GOPATH/bin/golint ./...
 * Please do impact testing of new code - It is desirable to not impact the thing
 we are supposed to monitor :)
