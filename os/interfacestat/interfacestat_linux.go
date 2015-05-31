@@ -16,6 +16,9 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
+// helper variable to make testing easy
+var root = "/"
+
 // InterfaceStat represents statistics about all interfaces
 type InterfaceStat struct {
 	Interfaces map[string]*PerInterfaceStat
@@ -44,7 +47,7 @@ func New(m *metrics.MetricContext, Step time.Duration) *InterfaceStat {
 // Collect reads /sysfs to figure out interface capabilities.
 // Collect is generally called directly when the package is initialized.
 func (s *InterfaceStat) Collect() {
-	file, err := os.Open("/proc/net/dev")
+	file, err := os.Open(root + "proc/net/dev")
 	defer file.Close()
 	if err != nil {
 		return
@@ -90,7 +93,7 @@ func (s *InterfaceStat) Collect() {
 		d.TXframe.Set(tx[5])
 		d.TXcompressed.Set(tx[6])
 		d.TXmulticast.Set(tx[7])
-		speed := misc.ReadUintFromFile("/sys/class/net/" + dev + "/speed")
+		speed := misc.ReadUintFromFile(root + "sys/class/net/" + dev + "/speed")
 		if speed > 0 {
 			d.Speed.Set(float64(speed))
 		}

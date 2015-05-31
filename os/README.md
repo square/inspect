@@ -67,6 +67,4 @@ Implemented libraries:
   * Please run golint.
 
 ###### TODO
-  * TESTS
   * PerProcessStat on darwin doesn't include optimizations done for Linux. 
-  * Add io metrics per process (need root priviliges)

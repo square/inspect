@@ -5,9 +5,6 @@ package pidstat
 import (
 	"bufio"
 	"errors"
-	"fmt"
-	"github.com/square/inspect/metrics"
-	"github.com/square/inspect/os/misc"
 	"io/ioutil"
 	"math"
 	"os"
@@ -17,6 +14,9 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/os/misc"
 )
 
 /*
@@ -27,7 +27,7 @@ import "C"
 
 var linuxTicksInSec = int(C.sysconf(C._SC_CLK_TCK))
 var pageSize = int(C.sysconf(C._SC_PAGESIZE))
-var _ = fmt.Println
+var root = "/" // to make testing easy
 
 // ProcessStat represents per-process cpu usage statistics
 type ProcessStat struct {
@@ -134,7 +134,7 @@ func (s *ProcessStat) Collect() {
 		v.Metrics.dead = true
 	}
 
-	pids, err := ioutil.ReadDir("/proc")
+	pids, err := ioutil.ReadDir(root + "proc")
 	if err != nil {
 		return
 	}
@@ -237,7 +237,7 @@ func (s *PerProcessStat) Pid() string {
 
 // Comm returns the command used to run for this process
 func (s *PerProcessStat) Comm() string {
-	file, err := os.Open("/proc/" + s.Metrics.Pid + "/stat")
+	file, err := os.Open(root + "proc/" + s.Metrics.Pid + "/stat")
 	defer file.Close()
 
 	if err != nil {
@@ -255,7 +255,7 @@ func (s *PerProcessStat) Comm() string {
 
 // Euid returns the effective uid for this process
 func (s *PerProcessStat) Euid() (string, error) {
-	file, err := os.Open("/proc/" + s.Metrics.Pid + "/status")
+	file, err := os.Open(root + "proc/" + s.Metrics.Pid + "/status")
 	defer file.Close()
 
 	if err != nil {
@@ -276,7 +276,7 @@ func (s *PerProcessStat) Euid() (string, error) {
 
 // Egid returns the effective gid for this process
 func (s *PerProcessStat) Egid() (string, error) {
-	file, err := os.Open("/proc/" + s.Metrics.Pid + "/status")
+	file, err := os.Open(root + "proc/" + s.Metrics.Pid + "/status")
 	defer file.Close()
 
 	if err != nil {
@@ -313,7 +313,7 @@ func (s *PerProcessStat) User() string {
 
 // Cmdline returns the complete command line used to invoke this process
 func (s *PerProcessStat) Cmdline() string {
-	content, err := ioutil.ReadFile("/proc/" + s.Metrics.Pid + "/cmdline")
+	content, err := ioutil.ReadFile(root + "proc/" + s.Metrics.Pid + "/cmdline")
 	if err != nil {
 		return string(content)
 	}
@@ -324,7 +324,7 @@ func (s *PerProcessStat) Cmdline() string {
 // Cgroup returns the name of the cgroup for this process for the input
 // cgroup subsystem
 func (s *PerProcessStat) Cgroup(subsys string) string {
-	file, err := os.Open("/proc/" + s.Metrics.Pid + "/cgroup")
+	file, err := os.Open(root + "proc/" + s.Metrics.Pid + "/cgroup")
 	defer file.Close()
 
 	if err == nil {
@@ -400,7 +400,7 @@ func (s *PerProcessStatMetrics) Reset(pid string) {
 // Collect collects per process CPU/Memory/IO metrics
 func (s *PerProcessStatMetrics) Collect() {
 
-	file, err := os.Open("/proc/" + s.Pid + "/stat")
+	file, err := os.Open(root + "proc/" + s.Pid + "/stat")
 	defer file.Close()
 
 	if err != nil {
@@ -417,7 +417,7 @@ func (s *PerProcessStatMetrics) Collect() {
 
 	// collect IO metrics
 	// only works if we are superuser on Linux
-	file, err = os.Open("/proc/" + s.Pid + "/io")
+	file, err = os.Open(root + "proc/" + s.Pid + "/io")
 	defer file.Close()
 
 	if err != nil {

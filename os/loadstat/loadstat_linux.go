@@ -13,6 +13,9 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
+// to make testing easy
+var root = "/"
+
 // LoadStat represents load average metrics for 1/5/15 Minutes of
 // current operating system.
 // Caution: reflection is used to read this struct to discover names
@@ -45,7 +48,7 @@ func New(m *metrics.MetricContext, Step time.Duration) *LoadStat {
 
 // Collect populates Loadstat by reading /proc/loadavg
 func (s *LoadStat) Collect() {
-	file, err := os.Open("/proc/loadavg")
+	file, err := os.Open(root + "proc/loadavg")
 	if err != nil {
 		return
 	}

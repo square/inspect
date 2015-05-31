@@ -14,6 +14,8 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
+var root = "/" // to make testing easy
+
 // TCPStat represents statistics about various tcp indicators
 // and is automatically initialized.
 // Caution: reflection is used to read this struct to discover names
@@ -68,8 +70,8 @@ func New(m *metrics.MetricContext, Step time.Duration) *TCPStat {
 
 // Collect populates TCPStat by reading /proc/net/snmp and /proc/net/netstat
 func (s *TCPStat) Collect() {
-	populateMetrics(s.m, s, "/proc/net/snmp", "Tcp:")
-	populateMetrics(s.m, s.Extended, "/proc/net/netstat", "TcpExt:")
+	populateMetrics(s.m, s, root+"proc/net/snmp", "Tcp:")
+	populateMetrics(s.m, s.Extended, root+"proc/net/netstat", "TcpExt:")
 }
 
 // Unexported functions

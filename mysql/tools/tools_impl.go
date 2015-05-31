@@ -359,6 +359,6 @@ func (idb *InnodbStats) parseTransactions(blob string) {
 			trxesNotStarted++
 		}
 	}
-	idb.Metrics["trxesNotStarted"] = strconv.Itoa(trxesNotStarted)
+	idb.Metrics["trxes_not_started"] = strconv.Itoa(trxesNotStarted)
 	idb.Metrics["undo"] = strconv.Itoa(undo)
 }

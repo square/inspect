@@ -15,6 +15,9 @@ import (
 	"github.com/square/inspect/os/misc"
 )
 
+// to make testing easy
+var root = "/"
+
 // MemStat represents statistics about memory subsystem
 // Caution: reflection is used to populate matching fields in /proc/meminfo
 type MemStat struct {
@@ -103,7 +106,7 @@ func (s *MemStat) Total() float64 {
 
 // Collect reads /proc/meminfo and populates MemStatMetrics
 func (s *MemStat) Collect() {
-	file, err := os.Open("/proc/meminfo")
+	file, err := os.Open(root + "proc/meminfo")
 	if err != nil {
 		return
 	}
