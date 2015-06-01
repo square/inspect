@@ -33,7 +33,7 @@ func TestCounterRate(t *testing.T) {
 	want := 200.0
 	out := c.ComputeRate()
 
-	if math.Abs(want-out) > 1 {
+	if math.Abs(want-out) > 10 {
 		t.Errorf("c.ComputeRate() = %v, want %v", out, want)
 	}
 }
