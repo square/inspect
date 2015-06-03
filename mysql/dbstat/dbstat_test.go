@@ -181,9 +181,10 @@ func TestBasic(t *testing.T) {
 		//not going to include every metric since the parsing function is the same for each
 		// missing metrics should not break metrics collector
 		globalStatsQuery: map[string][]string{
-			"Queries":         []string{"8"},
-			"Uptime":          []string{"100"},
-			"Threads_running": []string{"5"},
+			"Aborted_connects": []string{"51"},
+			"Queries":          []string{"8"},
+			"Uptime":           []string{"100"},
+			"Threads_running":  []string{"5"},
 		},
 	}
 	//expected results
@@ -211,6 +212,7 @@ func TestBasic(t *testing.T) {
 		s.Metrics.BinlogSize:               float64(1111),
 		s.Metrics.QueryResponseSec_0001:    uint64(300),
 		s.Metrics.OldestQueryS:             float64(12345),
+		s.Metrics.AbortedConnects:          uint64(51),
 	}
 	s.Collect()
 	time.Sleep(time.Millisecond * 1000 * 1)
