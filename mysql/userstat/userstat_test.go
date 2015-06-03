@@ -1,4 +1,4 @@
-//Copyright (c) 2015 Square, Inc
+//Copyright (c) 2014 Square, Inc
 //
 // Tests the metrics collecting functions for mysqlstat-tables.go.
 // Tests do not connect to a database, dummy functions are
@@ -16,7 +16,7 @@
 // may be more trouble than is worth. Manual testing may be required for
 // full acceptance tests.
 
-package tablestat
+package userstat
 
 import (
 	"log"
@@ -81,7 +81,7 @@ func initMysqlStatTable() *MysqlStatTables {
 	s.nLock = &sync.Mutex{}
 
 	s.m = metrics.NewMetricContext("system")
-	s.DBs = make(map[string]*DBStats)
+	s.Users = make(map[string]*MysqlUserStats)
 	return s
 }
 
@@ -118,6 +118,7 @@ func checkResults() string {
 // Most metrics are simple parsing strings to ints/floats.
 // More complex string manipulations are further tested in
 // later test functions.
+/*
 func TestBasic(t *testing.T) {
 
 	s := initMysqlStatTable()
@@ -128,16 +129,6 @@ func TestBasic(t *testing.T) {
 		},
 		//this particular query uses MapFirstColumnToRow
 		// so each database name points to its size
-		dbSizesQuery: map[string][]string{
-			"db1": []string{"100"},
-			"db2": []string{"200"},
-			"db3": []string{"300"},
-		},
-		tblSizesQuery: map[string][]string{
-			"tbl":            []string{"t1", "t2", "t3", "t1", "t2", "t1", "t1"},
-			"db":             []string{"db1", "db1", "db1", "db2", "db2", "db3", "db4"},
-			"tbl_size_bytes": []string{"1", "2", "3", "4", "5", "6", "7"},
-		},
 		tblStatisticsQuery: map[string][]string{
 			"db":                     []string{"db1", "db1", "db2", "db3", "db5"},
 			"tbl":                    []string{"t1", "t2", "t1", "t2", "t1"},
@@ -186,95 +177,19 @@ func TestBasic(t *testing.T) {
 		t.Error(err)
 	}
 }
+*/
 
-func TestDBSizes(t *testing.T) {
-
-	s := initMysqlStatTable()
-	s.nLock.Lock()
-	testquerycol = map[string]map[string][]string{
-		innodbMetadataCheck: map[string][]string{
-			"innodb_stats_on_metadata": []string{"0"},
-		},
-		//this particular query uses MapFirstColumnToRow
-		// so each database name points to its size
-		dbSizesQuery: map[string][]string{
-			"db1": []string{"100"},
-			"db2": []string{"200"},
-			"db3": []string{"300"},
-			"db4": []string{"400"},
-			"db5": []string{"500"},
-			"db6": []string{"600"},
-		},
-	}
-	s.nLock.Unlock()
-	s.Collect()
-	time.Sleep(time.Millisecond * 1000 * 1)
-	s.nLock.Lock()
-	expectedValues = map[interface{}]interface{}{
-		s.DBs["db1"].Metrics.SizeBytes: float64(100),
-		s.DBs["db2"].Metrics.SizeBytes: float64(200),
-		s.DBs["db3"].Metrics.SizeBytes: float64(300),
-		s.DBs["db4"].Metrics.SizeBytes: float64(400),
-		s.DBs["db5"].Metrics.SizeBytes: float64(500),
-		s.DBs["db6"].Metrics.SizeBytes: float64(600),
-	}
-	err := checkResults()
-	s.nLock.Unlock()
-	if err != "" {
-		t.Error(err)
-	}
-}
-
-func TestTableSizes(t *testing.T) {
-
-	s := initMysqlStatTable()
-	s.nLock.Lock()
-	testquerycol = map[string]map[string][]string{
-		innodbMetadataCheck: map[string][]string{
-			"innodb_stats_on_metadata": []string{"0"},
-		},
-		// Test giving information for tables without the schema they
-		// belong in being previously defined
-		tblSizesQuery: map[string][]string{
-			"tbl":            []string{"t1", "t2", "t3", "t1", "t2", "t1", "t1"},
-			"db":             []string{"db1", "db1", "db1", "db2", "db2", "db3", "db4"},
-			"tbl_size_bytes": []string{"1", "2", "3", "4", "5", "6", "7"},
-		},
-	}
-	s.nLock.Unlock()
-	s.Collect()
-	time.Sleep(time.Millisecond * 1000 * 1)
-
-	s.nLock.Lock()
-	expectedValues = map[interface{}]interface{}{
-		s.DBs["db1"].Tables["t1"].SizeBytes: float64(1),
-		s.DBs["db1"].Tables["t2"].SizeBytes: float64(2),
-		s.DBs["db1"].Tables["t3"].SizeBytes: float64(3),
-		s.DBs["db2"].Tables["t1"].SizeBytes: float64(4),
-		s.DBs["db2"].Tables["t2"].SizeBytes: float64(5),
-		s.DBs["db3"].Tables["t1"].SizeBytes: float64(6),
-		s.DBs["db4"].Tables["t1"].SizeBytes: float64(7),
-	}
-	err := checkResults()
-	s.nLock.Unlock()
-	if err != "" {
-		t.Error(err)
-	}
-}
-
-func TestTableStats(t *testing.T) {
-
+func TestUserStats(t *testing.T) {
 	s := initMysqlStatTable()
 	s.nLock.Lock()
 	testquerycol = map[string]map[string][]string{
 		// Test giving information for tables without the schema they
 		// belong in being previously defined
-		tblStatisticsQuery: map[string][]string{
-			"db":                     []string{"db1", "db1", "db2", "db3", "db5"},
-			"tbl":                    []string{"t1", "t2", "t1", "t2", "t1"},
-			"rows_read":              []string{"11", "12", "13", "14", "15"},
-			"rows_changed":           []string{"21", "22", "23", "24", "25"},
-			"rows_changed_x_indexes": []string{"31", "32", "33", "34", "35"},
+		usrStatisticsQuery: map[string][]string{
+			"user":                   []string{"u1", "u2", "u3", "u4", "u5"},
+			"total_connections":      []string{"11", "12", "13", "14", "15"},
+			"concurrent_connections": []string{"21", "22", "23", "24", "25"},
+			"connected_time":         []string{"31", "32", "33", "34", "35"},
 		},
 	}
 	s.nLock.Unlock()
@@ -283,65 +198,26 @@ func TestTableStats(t *testing.T) {
 
 	s.nLock.Lock()
 	expectedValues = map[interface{}]interface{}{
-		s.DBs["db1"].Tables["t1"].RowsRead:            uint64(11),
-		s.DBs["db1"].Tables["t2"].RowsRead:            uint64(12),
-		s.DBs["db2"].Tables["t1"].RowsRead:            uint64(13),
-		s.DBs["db3"].Tables["t2"].RowsRead:            uint64(14),
-		s.DBs["db5"].Tables["t1"].RowsRead:            uint64(15),
-		s.DBs["db1"].Tables["t1"].RowsChanged:         uint64(21),
-		s.DBs["db1"].Tables["t2"].RowsChanged:         uint64(22),
-		s.DBs["db2"].Tables["t1"].RowsChanged:         uint64(23),
-		s.DBs["db3"].Tables["t2"].RowsChanged:         uint64(24),
-		s.DBs["db5"].Tables["t1"].RowsChanged:         uint64(25),
-		s.DBs["db1"].Tables["t1"].RowsChangedXIndexes: uint64(31),
-		s.DBs["db1"].Tables["t2"].RowsChangedXIndexes: uint64(32),
-		s.DBs["db2"].Tables["t1"].RowsChangedXIndexes: uint64(33),
-		s.DBs["db3"].Tables["t2"].RowsChangedXIndexes: uint64(34),
-		s.DBs["db5"].Tables["t1"].RowsChangedXIndexes: uint64(35),
+		s.Users["u1"].TotalConnections:      uint64(11),
+		s.Users["u2"].TotalConnections:      uint64(12),
+		s.Users["u3"].TotalConnections:      uint64(13),
+		s.Users["u4"].TotalConnections:      uint64(14),
+		s.Users["u5"].TotalConnections:      uint64(15),
+		s.Users["u1"].ConcurrentConnections: uint64(21),
+		s.Users["u2"].ConcurrentConnections: uint64(22),
+		s.Users["u3"].ConcurrentConnections: uint64(23),
+		s.Users["u4"].ConcurrentConnections: uint64(24),
+		s.Users["u5"].ConcurrentConnections: uint64(25),
+		s.Users["u1"].ConnectedTime:         uint64(31),
+		s.Users["u2"].ConnectedTime:         uint64(32),
+		s.Users["u3"].ConnectedTime:         uint64(33),
+		s.Users["u4"].ConnectedTime:         uint64(34),
+		s.Users["u5"].ConnectedTime:         uint64(35),
 	}
+
 	err := checkResults()
 	s.nLock.Unlock()
 	if err != "" {
 		t.Error(err)
-	}
-}
-
-//Because innodb stats on metadata is being collected,
-//metrics collector should not collect these metrics
-func TestNoSizes(t *testing.T) {
-
-	s := initMysqlStatTable()
-	s.nLock.Lock()
-	testquerycol = map[string]map[string][]string{
-		innodbMetadataCheck: map[string][]string{
-			"innodb_stats_on_metadata": []string{"1"},
-		},
-		dbSizesQuery: map[string][]string{
-			"db1": []string{"100"},
-			"db2": []string{"200"},
-			"db3": []string{"300"},
-		},
-		tblSizesQuery: map[string][]string{
-			"tbl":            []string{"t1", "t2", "t3", "t1", "t2", "t1", "t1"},
-			"db":             []string{"db1", "db1", "db1", "db2", "db2", "db3", "db4"},
-			"tbl_size_bytes": []string{"1", "2", "3", "4", "5", "6", "7"},
-		},
-	}
-	s.nLock.Unlock()
-	s.Collect()
-	time.Sleep(time.Millisecond * 1000 * 1)
-	s.nLock.Lock()
-	defer s.nLock.Unlock()
-	_, ok := s.DBs["db1"]
-	if ok {
-		t.Error("found database, but should not have")
-	}
-	_, ok = s.DBs["db2"]
-	if ok {
-		t.Error("found database, but should not have")
-	}
-	_, ok = s.DBs["db2"]
-	if ok {
-		t.Error("found database, but should not have")
 	}
 }

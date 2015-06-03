@@ -1,4 +1,4 @@
-// Copyright (c) 2014 Square, Inc
+// Copyright (c) 2015 Square, Inc
 //
 
 package tablestat
