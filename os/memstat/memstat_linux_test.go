@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/square/inspect/metrics"
+	"github.com/sorawee/inspect/metrics"
 )
 
 func TestMemstat(t *testing.T) {

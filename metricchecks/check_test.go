@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/square/inspect/metrics"
+	"github.com/sorawee/inspect/metrics"
 
 	_ "code.google.com/p/go.tools/go/gcimporter"
 	"golang.org/x/tools/go/exact"

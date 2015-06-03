@@ -12,8 +12,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/square/inspect/metrics"
-	"github.com/square/inspect/os/misc"
+	"github.com/sorawee/inspect/metrics"
+	"github.com/sorawee/inspect/os/misc"
 )
 
 // FSStat represents file system statistics for all filesystems found

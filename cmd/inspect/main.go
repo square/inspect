@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/gizak/termui"
-	"github.com/square/inspect/cmd/inspect/osmain"
-	"github.com/square/inspect/metrics"
+	"github.com/sorawee/inspect/cmd/inspect/osmain"
+	"github.com/sorawee/inspect/metrics"
 )
 
 var layout *osmain.DisplayWidgets

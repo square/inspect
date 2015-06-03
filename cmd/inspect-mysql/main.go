@@ -112,7 +112,7 @@ func main() {
 					checkMetrics(c, m)
 				}
 				outputTableMetrics(sqlstat, sqlstatTables, m, form)
-				outputTableMetrics(sqlstatUsers, m, form)
+				outputUserMetrics(sqlstatUsers, m, form)
 			}
 		}
 		//if no group is specified, just run all metrics collections

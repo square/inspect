@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"code.google.com/p/goconf/conf"
-	"github.com/square/inspect/metrics"
+	"github.com/sorawee/inspect/metrics"
 	"golang.org/x/tools/go/exact"
 	_ "golang.org/x/tools/go/gcimporter"
 	"golang.org/x/tools/go/types"

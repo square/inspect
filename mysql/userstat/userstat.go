@@ -13,9 +13,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/square/inspect/metrics"
-	"github.com/square/inspect/mysql/tools"
-	"github.com/square/inspect/os/misc"
+	"github.com/sorawee/inspect/metrics"
+	"github.com/sorawee/inspect/mysql/tools"
+	"github.com/sorawee/inspect/os/misc"
 )
 
 const (

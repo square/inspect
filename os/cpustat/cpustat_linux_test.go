@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/square/inspect/metrics"
+	"github.com/sorawee/inspect/metrics"
 )
 
 func TestCPUUsage(t *testing.T) {

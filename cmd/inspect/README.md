@@ -17,16 +17,16 @@ Currently it can spot few easy ones:
 ###### Installation
 
 1. Get go
-2. go get -v -u github.com/square/inspect/inspect # fetches packages and builds
+2. go get -v -u github.com/sorawee/inspect/inspect # fetches packages and builds
 
 ###### Dependencies
 Package dependency is managed by godep (https://github.com/tools/godep). Follow the docs there when adding/removing/updating
 package dependencies.
 
 ###### Documentation
-http://godoc.org/github.com/square/inspect/os
+http://godoc.org/github.com/sorawee/inspect/os
 
-http://godoc.org/github.com/square/inspect/metrics
+http://godoc.org/github.com/sorawee/inspect/metrics
 
 ###### Usage
 ###### Command line

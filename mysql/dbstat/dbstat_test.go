@@ -28,7 +28,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/square/inspect/metrics"
+	"github.com/sorawee/inspect/metrics"
 )
 
 type testMysqlDB struct {

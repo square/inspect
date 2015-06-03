@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/square/inspect/metrics"
-	"github.com/square/inspect/os/misc"
+	"github.com/sorawee/inspect/metrics"
+	"github.com/sorawee/inspect/os/misc"
 )
 
 /*

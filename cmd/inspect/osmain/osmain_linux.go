@@ -11,15 +11,15 @@ import (
 	"sort"
 	"time"
 
-	"github.com/square/inspect/metrics"
-	"github.com/square/inspect/os/cpustat"
-	"github.com/square/inspect/os/diskstat"
-	"github.com/square/inspect/os/fsstat"
-	"github.com/square/inspect/os/interfacestat"
-	"github.com/square/inspect/os/loadstat"
-	"github.com/square/inspect/os/memstat"
-	"github.com/square/inspect/os/misc"
-	"github.com/square/inspect/os/tcpstat"
+	"github.com/sorawee/inspect/metrics"
+	"github.com/sorawee/inspect/os/cpustat"
+	"github.com/sorawee/inspect/os/diskstat"
+	"github.com/sorawee/inspect/os/fsstat"
+	"github.com/sorawee/inspect/os/interfacestat"
+	"github.com/sorawee/inspect/os/loadstat"
+	"github.com/sorawee/inspect/os/memstat"
+	"github.com/sorawee/inspect/os/misc"
+	"github.com/sorawee/inspect/os/tcpstat"
 )
 
 type linuxStats struct {

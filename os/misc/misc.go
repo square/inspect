@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/square/inspect/metrics"
+	"github.com/sorawee/inspect/metrics"
 )
 
 // Interface represents an empty interface

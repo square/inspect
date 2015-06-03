@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/square/inspect/mysql",
+	"ImportPath": "github.com/sorawee/inspect/mysql",
 	"GoVersion": "go1.2.1",
 	"Deps": [
 		{
