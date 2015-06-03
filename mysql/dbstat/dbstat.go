@@ -226,10 +226,10 @@ func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlS
 
 	// connect to database
 	var err error
-	s.db, err = tools.New(user, password, host, config)
+	s.Db, err = tools.New(user, password, host, config)
 	s.SetMaxConnections(defaultMaxConns)
 	if err != nil {
-		s.db.Log(err)
+		s.Db.Log(err)
 		return nil, err
 	}
 	s.Metrics = MysqlStatMetricsNew(m)
@@ -248,7 +248,7 @@ func MysqlStatMetricsNew(m *metrics.MetricContext) *MysqlStatMetrics {
 // sql.DB is safe for concurrent use by multiple goroutines
 // so launching each metric collector as its own goroutine is safe
 func (s *MysqlStatDBs) Collect() {
-	s.wg.Add(14)
+	s.Wg.Add(14)
 	go s.GetVersion()
 	go s.GetSlaveStats()
 	go s.GetGlobalStatus()
@@ -263,7 +263,7 @@ func (s *MysqlStatDBs) Collect() {
 	go s.GetBinlogFiles()
 	go s.GetInnodbStats()
 	go s.GetSecurity()
-	s.wg.Wait()
+	s.Wg.Wait()
 }
 
 // GetSlaveStats returns statistics regarding mysql replication
@@ -271,13 +271,13 @@ func (s *MysqlStatDBs) GetSlaveStats() {
 	s.Metrics.ReplicationRunning.Set(float64(-1))
 	numBackups := float64(0)
 
-	res, err := s.db.QueryReturnColumnDict(slaveBackupQuery)
+	res, err := s.Db.QueryReturnColumnDict(slaveBackupQuery)
 	if err != nil {
-		s.db.Log(err)
+		s.Db.Log(err)
 	} else if len(res["count"]) > 0 {
 		numBackups, err = strconv.ParseFloat(string(res["count"][0]), 64)
 		if err != nil {
-			s.db.Log(err)
+			s.Db.Log(err)
 		} else {
 			if numBackups > 0 {
 				s.Metrics.SlaveSecondsBehindMaster.Set(float64(-1))
@@ -285,17 +285,17 @@ func (s *MysqlStatDBs) GetSlaveStats() {
 			}
 		}
 	}
-	res, err = s.db.QueryReturnColumnDict(slaveQuery)
+	res, err = s.Db.QueryReturnColumnDict(slaveQuery)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 
 	if (len(res["Seconds_Behind_Master"]) > 0) && (string(res["Seconds_Behind_Master"][0]) != "") {
 		secondsBehindMaster, err := strconv.ParseFloat(string(res["Seconds_Behind_Master"][0]), 64)
 		if err != nil {
-			s.db.Log(err)
+			s.Db.Log(err)
 			s.Metrics.SlaveSecondsBehindMaster.Set(float64(-1))
 			if numBackups == 0 {
 				s.Metrics.ReplicationRunning.Set(float64(-1))
@@ -312,43 +312,43 @@ func (s *MysqlStatDBs) GetSlaveStats() {
 		slaveSeqFile, err := strconv.ParseInt(tmp[len(tmp)-1], 10, 64)
 		s.Metrics.SlaveSeqFile.Set(float64(slaveSeqFile))
 		if err != nil {
-			s.db.Log(err)
+			s.Db.Log(err)
 		}
 	}
 
 	if len(res["Exec_Master_Log_Pos"]) > 0 {
 		slavePosition, err := strconv.ParseFloat(string(res["Exec_Master_Log_Pos"][0]), 64)
 		if err != nil {
-			s.db.Log(err)
-			s.wg.Done()
+			s.Db.Log(err)
+			s.Wg.Done()
 			return
 		}
 		s.Metrics.SlavePosition.Set(uint64(slavePosition))
 	}
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
 // GetGlobalStatus collects information returned by global status
 func (s *MysqlStatDBs) GetGlobalStatus() {
-	res, err := s.db.QueryReturnColumnDict(maxPreparedStmtCountQuery)
+	res, err := s.Db.QueryReturnColumnDict(maxPreparedStmtCountQuery)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	var maxPreparedStmtCount int64
 	if err == nil && len(res["Value"]) > 0 {
 		maxPreparedStmtCount, err = strconv.ParseInt(res["Value"][0], 10, 64)
 		if err != nil {
-			s.db.Log(err)
+			s.Db.Log(err)
 		}
 	}
 
-	res, err = s.db.QueryMapFirstColumnToRow(globalStatsQuery)
+	res, err = s.Db.QueryMapFirstColumnToRow(globalStatsQuery)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	vars := map[string]interface{}{
@@ -391,7 +391,7 @@ func (s *MysqlStatDBs) GetGlobalStatus() {
 		if ok && len(v) > 0 {
 			val, err := strconv.ParseFloat(string(v[0]), 64)
 			if err != nil {
-				s.db.Log(err)
+				s.Db.Log(err)
 			}
 			switch met := metric.(type) {
 			case *metrics.Counter:
@@ -407,36 +407,36 @@ func (s *MysqlStatDBs) GetGlobalStatus() {
 		s.Metrics.PreparedStmtPct.Set(pct)
 	}
 
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
 // GetOldestQuery collects the time of oldest query in seconds
 func (s *MysqlStatDBs) GetOldestQuery() {
-	res, err := s.db.QueryReturnColumnDict(oldestQuery)
+	res, err := s.Db.QueryReturnColumnDict(oldestQuery)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	t := int64(0)
 	if time, ok := res["time"]; ok && len(time) > 0 {
 		t, err = strconv.ParseInt(time[0], 10, 64)
 		if err != nil {
-			s.db.Log(err)
+			s.Db.Log(err)
 		}
 	}
 	s.Metrics.OldestQueryS.Set(float64(t))
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
 // GetOldestTrx collects information about oldest transaction
 func (s *MysqlStatDBs) GetOldestTrx() {
-	res, err := s.db.QueryReturnColumnDict(oldestTrx)
+	res, err := s.Db.QueryReturnColumnDict(oldestTrx)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	t := int64(0)
@@ -445,7 +445,7 @@ func (s *MysqlStatDBs) GetOldestTrx() {
 		//only error expecting is when "NULL" is encountered
 	}
 	s.Metrics.OldestTrxS.Set(float64(t))
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
@@ -467,17 +467,17 @@ func (s *MysqlStatDBs) GetQueryResponseTime() {
 		"1000000.": s.Metrics.QueryResponseSec100000_,
 	}
 
-	res, err := s.db.QueryReturnColumnDict(responseTimeQuery)
+	res, err := s.Db.QueryReturnColumnDict(responseTimeQuery)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 
 	for i, time := range res["time"] {
 		count, err := strconv.ParseInt(res["count"][i], 10, 64)
 		if err != nil {
-			s.db.Log(err)
+			s.Db.Log(err)
 		}
 		if count < 1 {
 			continue
@@ -487,16 +487,16 @@ func (s *MysqlStatDBs) GetQueryResponseTime() {
 			timer.Set(uint64(count))
 		}
 	}
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
 // GetBinlogFiles collects status on binary logs
 func (s *MysqlStatDBs) GetBinlogFiles() {
-	res, err := s.db.QueryReturnColumnDict(binlogQuery)
+	res, err := s.Db.QueryReturnColumnDict(binlogQuery)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	s.Metrics.BinlogFiles.Set(float64(len(res["File_size"])))
@@ -504,26 +504,26 @@ func (s *MysqlStatDBs) GetBinlogFiles() {
 	for _, size := range res["File_size"] {
 		si, err := strconv.ParseInt(size, 10, 64)
 		if err != nil {
-			s.db.Log(err) //don't return err so we can continue with more values
+			s.Db.Log(err) //don't return err so we can continue with more values
 		}
 		binlogTotalSize += si
 	}
 	s.Metrics.BinlogSize.Set(float64(binlogTotalSize))
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
 // GetNumLongRunQueries collects number of long running queries
 func (s *MysqlStatDBs) GetNumLongRunQueries() {
-	res, err := s.db.QueryReturnColumnDict(longQuery)
+	res, err := s.Db.QueryReturnColumnDict(longQuery)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	foundSql := len(res["ID"])
 	s.Metrics.ActiveLongRunQueries.Set(float64(foundSql))
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
@@ -531,14 +531,14 @@ func (s *MysqlStatDBs) GetNumLongRunQueries() {
 // version is of the form '1.2.34-56.7' or '9.8.76a-54.3-log'
 // want to represent version in form '1.234567' or '9.876543'
 func (s *MysqlStatDBs) GetVersion() {
-	res, err := s.db.QueryReturnColumnDict(versionQuery)
+	res, err := s.Db.QueryReturnColumnDict(versionQuery)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	if len(res["VERSION()"]) == 0 {
-		s.wg.Done()
+		s.Wg.Done()
 		return
 	}
 	version := res["VERSION()"][0]
@@ -557,36 +557,36 @@ func (s *MysqlStatDBs) GetVersion() {
 	ver /= math.Pow(10.0, (float64(len(version)) - leading))
 	s.Metrics.Version.Set(ver)
 	if err != nil {
-		s.db.Log(err)
+		s.Db.Log(err)
 	}
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
 // GetBinlogStats collect statistics about binlog (position etc)
 func (s *MysqlStatDBs) GetBinlogStats() {
-	res, err := s.db.QueryReturnColumnDict(binlogStatsQuery)
+	res, err := s.Db.QueryReturnColumnDict(binlogStatsQuery)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	if len(res["File"]) == 0 || len(res["Position"]) == 0 {
-		s.wg.Done()
+		s.Wg.Done()
 		return
 	}
 
 	v, err := strconv.ParseFloat(strings.Split(string(res["File"][0]), ".")[1], 64)
 	if err != nil {
-		s.db.Log(err)
+		s.Db.Log(err)
 	}
 	s.Metrics.BinlogSeqFile.Set(float64(v))
 	v, err = strconv.ParseFloat(string(res["Position"][0]), 64)
 	if err != nil {
-		s.db.Log(err)
+		s.Db.Log(err)
 	}
 	s.Metrics.BinlogPosition.Set(uint64(v))
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
@@ -595,52 +595,52 @@ func (s *MysqlStatDBs) GetBinlogStats() {
 // query "stacking up"/ executing at the same time
 func (s *MysqlStatDBs) GetStackedQueries() {
 	cmd := stackedQuery
-	res, err := s.db.QueryReturnColumnDict(cmd)
+	res, err := s.Db.QueryReturnColumnDict(cmd)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	if len(res["identical_queries_stacked"]) > 0 {
 		count, err := strconv.ParseFloat(string(res["identical_queries_stacked"][0]), 64)
 		if err != nil {
-			s.db.Log(err)
+			s.Db.Log(err)
 		}
 		s.Metrics.IdenticalQueriesStacked.Set(float64(count))
 		age, err := strconv.ParseFloat(string(res["max_age"][0]), 64)
 		if err != nil {
-			s.db.Log(err)
+			s.Db.Log(err)
 		}
 		s.Metrics.IdenticalQueriesMaxAge.Set(float64(age))
 	}
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
 // GetSessions collects statistics about sessions
 func (s *MysqlStatDBs) GetSessions() {
-	res, err := s.db.QueryReturnColumnDict(sessionQuery1)
+	res, err := s.Db.QueryReturnColumnDict(sessionQuery1)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	var maxSessions int64
 	for _, val := range res {
 		maxSessions, err = strconv.ParseInt(val[0], 10, 64)
 		if err != nil {
-			s.db.Log(err)
+			s.Db.Log(err)
 		}
 		s.Metrics.MaxConnections.Set(float64(maxSessions))
 	}
-	res, err = s.db.QueryReturnColumnDict(sessionQuery2)
+	res, err = s.Db.QueryReturnColumnDict(sessionQuery2)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	if len(res["COMMAND"]) == 0 {
-		s.wg.Done()
+		s.Wg.Done()
 		return
 	}
 	currentTotal := len(res["COMMAND"])
@@ -683,30 +683,30 @@ func (s *MysqlStatDBs) GetSessions() {
 	s.Metrics.SessionsCopyingToTable.Set(float64(copyToTable))
 	s.Metrics.SessionsStatistics.Set(float64(statistics))
 
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
 // GetInnodbStats collects metrics related to InnoDB engine
 func (s *MysqlStatDBs) GetInnodbStats() {
-	res, err := s.db.QueryReturnColumnDict(innodbQuery)
+	res, err := s.Db.QueryReturnColumnDict(innodbQuery)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	var innodbLogFileSize int64
 	if err == nil && len(res["Value"]) > 0 {
 		innodbLogFileSize, err = strconv.ParseInt(res["Value"][0], 10, 64)
 		if err != nil {
-			s.db.Log(err)
+			s.Db.Log(err)
 		}
 	}
 
-	res, err = s.db.QueryReturnColumnDict("SHOW ENGINE INNODB STATUS")
+	res, err = s.Db.QueryReturnColumnDict("SHOW ENGINE INNODB STATUS")
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 
@@ -762,7 +762,7 @@ func (s *MysqlStatDBs) GetInnodbStats() {
 		if ok {
 			val, err := strconv.ParseFloat(string(v), 64)
 			if err != nil {
-				s.db.Log(err)
+				s.Db.Log(err)
 			}
 			//case based on type so can switch between Gauge and Counter easily
 			switch met := metric.(type) {
@@ -777,7 +777,7 @@ func (s *MysqlStatDBs) GetInnodbStats() {
 		lsns, _ := strconv.ParseFloat(lsn, 64)
 		s.Metrics.InnodbLogWriteRatio.Set((lsns * 3600.0) / float64(innodbLogFileSize))
 	}
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
@@ -786,8 +786,8 @@ func (s *MysqlStatDBs) GetInnodbStats() {
 func (s *MysqlStatDBs) GetBackups() {
 	out, err := exec.Command("ps", "aux").Output()
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	blob := string(out)
@@ -806,20 +806,20 @@ func (s *MysqlStatDBs) GetBackups() {
 		}
 	}
 	s.Metrics.BackupsRunning.Set(float64(backupProcs))
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 
 // GetSecurity collects information about users without authentication
 func (s *MysqlStatDBs) GetSecurity() {
-	res, err := s.db.QueryReturnColumnDict(securityQuery)
+	res, err := s.Db.QueryReturnColumnDict(securityQuery)
 	if err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	s.Metrics.UnsecureUsers.Set(float64(len(res["users"])))
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 

@@ -1,6 +1,6 @@
 //Copyright (c) 2014 Square, Inc
 //
-// Tests the metrics collecting functions for mysqlstat-tables.go.
+// Tests the metrics collecting functions for userstat.go.
 // Tests do not connect to a database, dummy functions are
 // used instead and return hard coded input. Testing connections
 // to a database are done in mysqltools_test.go.

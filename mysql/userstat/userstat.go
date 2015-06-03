@@ -11,6 +11,7 @@ import (
 
 	"github.com/square/inspect/metrics"
 	"github.com/square/inspect/mysql/tools"
+	"github.com/square/inspect/mysql/util"
 	"github.com/square/inspect/os/misc"
 )
 
@@ -24,6 +25,7 @@ SELECT user, total_connections, concurrent_connections, connected_time
 
 // MysqlStatUsers - main struct that contains connection to database, metric context, and map to stats struct
 type MysqlStatUsers struct {
+	util.MysqlStat
 	Users map[string]*MysqlStatPerUser
 	nLock *sync.Mutex
 }
@@ -40,11 +42,11 @@ type MysqlStatPerUser struct {
 // mysql. username and password can be left as "" if a config file is specified.
 func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlStatUsers, error) {
 	s := new(MysqlStatUsers)
-	s.m = m
+	s.M = m
 	s.nLock = &sync.Mutex{}
 	// connect to database
 	var err error
-	s.db, err = tools.New(user, password, host, config)
+	s.Db, err = tools.New(user, password, host, config)
 	s.nLock.Lock()
 	s.Users = make(map[string]*MysqlStatPerUser)
 	s.nLock.Unlock()
@@ -65,16 +67,16 @@ func newMysqlStatPerUser(m *metrics.MetricContext, user string) *MysqlStatPerUse
 // sql.DB is thread safe so launching metrics collectors
 // in their own goroutines is safe
 func (s *MysqlStatUsers) Collect() {
-	s.wg.Add(1)
+	s.Wg.Add(1)
 	go s.GetUserStatistics()
-	s.wg.Wait()
+	s.Wg.Wait()
 }
 
 //check if database struct is instantiated, and instantiate if not
 func (s *MysqlStatUsers) checkUser(user string) {
 	s.nLock.Lock()
 	if _, ok := s.Users[user]; !ok {
-		s.Users[user] = newMysqlStatPerUser(s.m, user)
+		s.Users[user] = newMysqlStatPerUser(s.M, user)
 	}
 	s.nLock.Unlock()
 	return
@@ -84,10 +86,10 @@ func (s *MysqlStatUsers) checkUser(user string) {
 func (s *MysqlStatUsers) GetUserStatistics() {
 	fields := []string{"total_connections", "concurrent_connections", "connected_time"}
 
-	res, err := s.db.QueryReturnColumnDict(usrStatisticsQuery)
+	res, err := s.Db.QueryReturnColumnDict(usrStatisticsQuery)
 	if len(res) == 0 || err != nil {
-		s.db.Log(err)
-		s.wg.Done()
+		s.Db.Log(err)
+		s.Wg.Done()
 		return
 	}
 	for i, user := range res["user"] {
@@ -95,7 +97,7 @@ func (s *MysqlStatUsers) GetUserStatistics() {
 		for _, queryField := range fields {
 			field, err := strconv.ParseInt(res[queryField][i], 10, 64)
 			if err != nil {
-				s.db.Log(err)
+				s.Db.Log(err)
 			}
 			s.nLock.Lock()
 			// cannot use reflection to get a field dynamically because it's too slow
@@ -110,7 +112,7 @@ func (s *MysqlStatUsers) GetUserStatistics() {
 			s.nLock.Unlock()
 		}
 	}
-	s.wg.Done()
+	s.Wg.Done()
 	return
 }
 

@@ -159,7 +159,7 @@ func checkMetrics(c metricchecks.Checker, m *metrics.MetricContext) error {
 }
 
 //output metrics in specific output format
-func outputTableMetrics(d *dbstat.MysqlStat, t *tablestat.MysqlStatTables,
+func outputTableMetrics(d *dbstat.MysqlStatDBs, t *tablestat.MysqlStatTables,
 	m *metrics.MetricContext, form string) {
 	//print out json packages
 	if form == "json" {
@@ -174,7 +174,7 @@ func outputTableMetrics(d *dbstat.MysqlStat, t *tablestat.MysqlStatTables,
 }
 
 //output metrics in specific output format
-func outputUserMetrics(u *userstat.MysqlStatTables,
+func outputUserMetrics(u *userstat.MysqlStatUsers,
 	m *metrics.MetricContext, form string) {
 	//print out json packages
 	if form == "json" {
