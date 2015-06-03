@@ -8,14 +8,12 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"reflect"
-	"regexp"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/square/inspect/metrics"
 	"github.com/square/inspect/mysql/tools"
+	"github.com/square/inspect/mysql/util"
 	"github.com/square/inspect/os/misc"
 )
 
@@ -42,11 +40,9 @@ SELECT table_schema AS db, table_name AS tbl,
 
 // MysqlStatTables - main struct that contains connection to database, metric context, and map to database stats struct
 type MysqlStatTables struct {
+	util.MysqlStat
 	DBs   map[string]*DBStats
-	m     *metrics.MetricContext
-	db    tools.MysqlDB
 	nLock *sync.Mutex
-	wg    sync.WaitGroup
 }
 
 // DBStats represents struct that contains metrics for databases and map to tables stats struct
@@ -87,11 +83,6 @@ func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlS
 	return s, nil
 }
 
-// SetMaxConnections sets the max number of concurrent connections that the mysql client can use
-func (s *MysqlStatTables) SetMaxConnections(maxConns int) {
-	s.db.SetMaxConnections(maxConns)
-}
-
 //initialize  per database metrics
 func newMysqlStatPerDB(m *metrics.MetricContext, dbname string) *MysqlStatPerDB {
 	o := new(MysqlStatPerDB)
@@ -102,7 +93,6 @@ func newMysqlStatPerDB(m *metrics.MetricContext, dbname string) *MysqlStatPerDB 
 //initialize per table metrics
 func newMysqlStatPerTable(m *metrics.MetricContext, dbname, tblname string) *MysqlStatPerTable {
 	o := new(MysqlStatPerTable)
-
 	misc.InitializeMetrics(o, m, "mysqlstat."+dbname+"."+tblname, true)
 	return o
 }
@@ -278,31 +268,6 @@ func (s *MysqlStatTables) GetTableStatistics() {
 	}
 	s.wg.Done()
 	return
-}
-
-// Close closes connection with database
-func (s *MysqlStatTables) Close() {
-	s.db.Close()
-}
-
-// CallByMethodName searches for a method implemented
-// by s with name. Runs all methods that match names.
-func (s *MysqlStatTables) CallByMethodName(name string) error {
-	r := reflect.TypeOf(s)
-	re := regexp.MustCompile(strings.ToLower(name))
-	f := false
-	for i := 0; i < r.NumMethod(); i++ {
-		n := strings.ToLower(r.Method(i).Name)
-		if strings.Contains(n, "get") && re.MatchString(n) {
-			s.wg.Add(1)
-			reflect.ValueOf(s).Method(i).Call([]reflect.Value{})
-			f = true
-		}
-	}
-	if !f {
-		return errors.New("Could not find function")
-	}
-	return nil
 }
 
 // FormatGraphite writes metrics in the form "metric_name metric_value"

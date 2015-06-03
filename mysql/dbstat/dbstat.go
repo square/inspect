@@ -4,7 +4,6 @@
 package dbstat
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -13,19 +12,17 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/square/inspect/metrics"
 	"github.com/square/inspect/mysql/tools"
+	"github.com/square/inspect/mysql/util"
 	"github.com/square/inspect/os/misc"
 )
 
-// MysqlStat represents collection of metrics and connection to database
-type MysqlStat struct {
+// MysqlStatDBs represents collection of metrics and connection to database
+type MysqlStatDBs struct {
+	util.MysqlStat
 	Metrics *MysqlStatMetrics //collection of metrics
-	m       *metrics.MetricContext
-	db      tools.MysqlDB //mysql connection
-	wg      sync.WaitGroup
 }
 
 // MysqlStatMetrics represents metrics being collected about the server/database
@@ -224,8 +221,8 @@ SELECT COUNT(*) as count
 // New initializes mysqlstat
 // arguments: metrics context, username, password, path to config file for
 // mysql. username and password can be left as "" if a config file is specified.
-func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlStat, error) {
-	s := new(MysqlStat)
+func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlStatDBs, error) {
+	s := new(MysqlStatDBs)
 
 	// connect to database
 	var err error
@@ -240,11 +237,6 @@ func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlS
 	return s, nil
 }
 
-// SetMaxConnections sets the max number of concurrent connections that the mysql client can use
-func (s *MysqlStat) SetMaxConnections(maxConns int) {
-	s.db.SetMaxConnections(maxConns)
-}
-
 // MysqlStatMetricsNew initializes metrics and registers with metriccontext
 func MysqlStatMetricsNew(m *metrics.MetricContext) *MysqlStatMetrics {
 	c := new(MysqlStatMetrics)
@@ -255,7 +247,7 @@ func MysqlStatMetricsNew(m *metrics.MetricContext) *MysqlStatMetrics {
 // Collect launches metrics collectors.
 // sql.DB is safe for concurrent use by multiple goroutines
 // so launching each metric collector as its own goroutine is safe
-func (s *MysqlStat) Collect() {
+func (s *MysqlStatDBs) Collect() {
 	s.wg.Add(14)
 	go s.GetVersion()
 	go s.GetSlaveStats()
@@ -275,7 +267,7 @@ func (s *MysqlStat) Collect() {
 }
 
 // GetSlaveStats returns statistics regarding mysql replication
-func (s *MysqlStat) GetSlaveStats() {
+func (s *MysqlStatDBs) GetSlaveStats() {
 	s.Metrics.ReplicationRunning.Set(float64(-1))
 	numBackups := float64(0)
 
@@ -338,7 +330,7 @@ func (s *MysqlStat) GetSlaveStats() {
 }
 
 // GetGlobalStatus collects information returned by global status
-func (s *MysqlStat) GetGlobalStatus() {
+func (s *MysqlStatDBs) GetGlobalStatus() {
 	res, err := s.db.QueryReturnColumnDict(maxPreparedStmtCountQuery)
 	if err != nil {
 		s.db.Log(err)
@@ -420,7 +412,7 @@ func (s *MysqlStat) GetGlobalStatus() {
 }
 
 // GetOldestQuery collects the time of oldest query in seconds
-func (s *MysqlStat) GetOldestQuery() {
+func (s *MysqlStatDBs) GetOldestQuery() {
 	res, err := s.db.QueryReturnColumnDict(oldestQuery)
 	if err != nil {
 		s.db.Log(err)
@@ -440,7 +432,7 @@ func (s *MysqlStat) GetOldestQuery() {
 }
 
 // GetOldestTrx collects information about oldest transaction
-func (s *MysqlStat) GetOldestTrx() {
+func (s *MysqlStatDBs) GetOldestTrx() {
 	res, err := s.db.QueryReturnColumnDict(oldestTrx)
 	if err != nil {
 		s.db.Log(err)
@@ -458,7 +450,7 @@ func (s *MysqlStat) GetOldestTrx() {
 }
 
 // GetQueryResponseTime collects various query response times
-func (s *MysqlStat) GetQueryResponseTime() {
+func (s *MysqlStatDBs) GetQueryResponseTime() {
 	timers := map[string]*metrics.Counter{
 		".000001":  s.Metrics.QueryResponseSec_000001,
 		".00001":   s.Metrics.QueryResponseSec_00001,
@@ -500,7 +492,7 @@ func (s *MysqlStat) GetQueryResponseTime() {
 }
 
 // GetBinlogFiles collects status on binary logs
-func (s *MysqlStat) GetBinlogFiles() {
+func (s *MysqlStatDBs) GetBinlogFiles() {
 	res, err := s.db.QueryReturnColumnDict(binlogQuery)
 	if err != nil {
 		s.db.Log(err)
@@ -522,7 +514,7 @@ func (s *MysqlStat) GetBinlogFiles() {
 }
 
 // GetNumLongRunQueries collects number of long running queries
-func (s *MysqlStat) GetNumLongRunQueries() {
+func (s *MysqlStatDBs) GetNumLongRunQueries() {
 	res, err := s.db.QueryReturnColumnDict(longQuery)
 	if err != nil {
 		s.db.Log(err)
@@ -538,7 +530,7 @@ func (s *MysqlStat) GetNumLongRunQueries() {
 // GetVersion collects version information about current instance
 // version is of the form '1.2.34-56.7' or '9.8.76a-54.3-log'
 // want to represent version in form '1.234567' or '9.876543'
-func (s *MysqlStat) GetVersion() {
+func (s *MysqlStatDBs) GetVersion() {
 	res, err := s.db.QueryReturnColumnDict(versionQuery)
 	if err != nil {
 		s.db.Log(err)
@@ -572,7 +564,7 @@ func (s *MysqlStat) GetVersion() {
 }
 
 // GetBinlogStats collect statistics about binlog (position etc)
-func (s *MysqlStat) GetBinlogStats() {
+func (s *MysqlStatDBs) GetBinlogStats() {
 	res, err := s.db.QueryReturnColumnDict(binlogStatsQuery)
 	if err != nil {
 		s.db.Log(err)
@@ -601,7 +593,7 @@ func (s *MysqlStat) GetBinlogStats() {
 // GetStackedQueries collects information about stacked queries. It can be
 // used to detect application bugs which result in multiple instance of the same
 // query "stacking up"/ executing at the same time
-func (s *MysqlStat) GetStackedQueries() {
+func (s *MysqlStatDBs) GetStackedQueries() {
 	cmd := stackedQuery
 	res, err := s.db.QueryReturnColumnDict(cmd)
 	if err != nil {
@@ -626,7 +618,7 @@ func (s *MysqlStat) GetStackedQueries() {
 }
 
 // GetSessions collects statistics about sessions
-func (s *MysqlStat) GetSessions() {
+func (s *MysqlStatDBs) GetSessions() {
 	res, err := s.db.QueryReturnColumnDict(sessionQuery1)
 	if err != nil {
 		s.db.Log(err)
@@ -696,7 +688,7 @@ func (s *MysqlStat) GetSessions() {
 }
 
 // GetInnodbStats collects metrics related to InnoDB engine
-func (s *MysqlStat) GetInnodbStats() {
+func (s *MysqlStatDBs) GetInnodbStats() {
 	res, err := s.db.QueryReturnColumnDict(innodbQuery)
 	if err != nil {
 		s.db.Log(err)
@@ -791,7 +783,7 @@ func (s *MysqlStat) GetInnodbStats() {
 
 // GetBackups collects information about backup processes
 // TODO: Find a better method than parsing output from ps
-func (s *MysqlStat) GetBackups() {
+func (s *MysqlStatDBs) GetBackups() {
 	out, err := exec.Command("ps", "aux").Output()
 	if err != nil {
 		s.db.Log(err)
@@ -819,7 +811,7 @@ func (s *MysqlStat) GetBackups() {
 }
 
 // GetSecurity collects information about users without authentication
-func (s *MysqlStat) GetSecurity() {
+func (s *MysqlStatDBs) GetSecurity() {
 	res, err := s.db.QueryReturnColumnDict(securityQuery)
 	if err != nil {
 		s.db.Log(err)
@@ -831,35 +823,10 @@ func (s *MysqlStat) GetSecurity() {
 	return
 }
 
-// Close closes database connection
-func (s *MysqlStat) Close() {
-	s.db.Close()
-}
-
-// CallByMethodName searches for a method implemented
-// by s with name. Runs all methods that match names.
-func (s *MysqlStat) CallByMethodName(name string) error {
-	r := reflect.TypeOf(s)
-	re := regexp.MustCompile(strings.ToLower(name))
-	f := false
-	for i := 0; i < r.NumMethod(); i++ {
-		n := strings.ToLower(r.Method(i).Name)
-		if strings.Contains(n, "get") && re.MatchString(n) {
-			s.wg.Add(1)
-			reflect.ValueOf(s).Method(i).Call([]reflect.Value{})
-			f = true
-		}
-	}
-	if !f {
-		return errors.New("Could not find function")
-	}
-	return nil
-}
-
 // FormatGraphite returns []string of metric values of the form:
 // "metric_name metric_value"
 // This is the form that stats-collector uses to send messages to graphite
-func (s *MysqlStat) FormatGraphite(w io.Writer) error {
+func (s *MysqlStatDBs) FormatGraphite(w io.Writer) error {
 	metricstype := reflect.TypeOf(*s.Metrics)
 	metricvalue := reflect.ValueOf(*s.Metrics)
 	for i := 0; i < metricvalue.NumField(); i++ {
