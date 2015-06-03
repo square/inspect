@@ -56,6 +56,7 @@ func main() {
 
 	if !batchmode {
 		err := termui.Init()
+		termui.UseTheme("helloworld")
 		if err != nil {
 			log.Fatalf("Unable to initialize termui", err)
 		}
