@@ -81,7 +81,7 @@ func (s *testMysqlDB) SetMaxConnections(maxConns int) {
 func initMysqlStat() *MysqlStat {
 	syscall.Dup2(int(logFile.Fd()), 2)
 	s := new(MysqlStat)
-	s.db = &testMysqlDB{
+	s.Db = &testMysqlDB{
 		Logger: log.New(os.Stderr, "TESTING LOG: ", log.Lshortfile),
 	}
 	s.Metrics = MysqlStatMetricsNew(metrics.NewMetricContext("system"))

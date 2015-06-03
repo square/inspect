@@ -75,12 +75,12 @@ func (s *testMysqlDB) SetMaxConnections(maxConns int) {
 func initMysqlStatTable() *MysqlStatTables {
 	syscall.Dup2(int(logFile.Fd()), 2)
 	s := new(MysqlStatTables)
-	s.db = &testMysqlDB{
+	s.Db = &testMysqlDB{
 		Logger: log.New(os.Stderr, "TESTING LOG: ", log.Lshortfile),
 	}
 	s.nLock = &sync.Mutex{}
 
-	s.m = metrics.NewMetricContext("system")
+	s.M = metrics.NewMetricContext("system")
 	s.DBs = make(map[string]*DBStats)
 	return s
 }
