@@ -72,16 +72,16 @@ func (s *testMysqlDB) SetMaxConnections(maxConns int) {
 	return
 }
 
-func initMysqlStatTable() *MysqlStatTables {
+func initMysqlStatUser() *MysqlStatUsers {
 	syscall.Dup2(int(logFile.Fd()), 2)
-	s := new(MysqlStatTables)
+	s := new(MysqlStatUsers)
 	s.Db = &testMysqlDB{
 		Logger: log.New(os.Stderr, "TESTING LOG: ", log.Lshortfile),
 	}
 	s.nLock = &sync.Mutex{}
 
 	s.M = metrics.NewMetricContext("system")
-	s.Users = make(map[string]*MysqlUserStats)
+	s.Users = make(map[string]*MysqlStatPerUser)
 	return s
 }
 
@@ -115,7 +115,7 @@ func checkResults() string {
 }
 
 func TestUserStats(t *testing.T) {
-	s := initMysqlStatTable()
+	s := initMysqlStatUser()
 	s.nLock.Lock()
 	testquerycol = map[string]map[string][]string{
 		// Test giving information for tables without the schema they
