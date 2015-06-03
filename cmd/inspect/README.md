@@ -35,10 +35,10 @@ http://godoc.org/github.com/square/inspect/metrics
 
 ##### Summary View
 
-<img src="https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/summary.png" height="540" width="507">
+<img src="https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/summary.png" width="540" height="507">
 
 ##### Details View
-<img src="https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/details.png" height="403" width="190">
+<img src="https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/details.png" width="403" height="190">
 
 ###### Server 
 
