@@ -18,82 +18,17 @@ import (
 	"github.com/square/inspect/metrics"
 )
 
-var layout *osmain.DisplayWidgets
-var evt <-chan termui.Event
-
-func setupDisplay() *osmain.DisplayWidgets {
-	err := termui.Init()
-	termui.UseTheme("helloworld")
-	if err != nil {
-		log.Fatalf("Unable to initialize termui", err) // exits with 1
-	}
-	layout := new(osmain.DisplayWidgets)
-	layout.Summary = termui.NewPar("Gathering statistics ...")
-	layout.Summary.Height = 3
-	help := termui.NewPar("Press q to quit")
-	help.Height = 3
-	layout.ProcessesByCPU = termui.NewList()
-	layout.ProcessesByCPU.Height = 5
-	layout.ProcessesByCPU.Border.Label = "CPU"
-	layout.ProcessesByMemory = termui.NewList()
-	layout.ProcessesByMemory.Height = 5
-	layout.ProcessesByMemory.Border.Label = "Memory"
-	layout.ProcessesByIO = termui.NewList()
-	layout.ProcessesByIO.Height = 5
-	layout.ProcessesByIO.Border.Label = "IO"
-	layout.DiskIOUsage = termui.NewList()
-	layout.DiskIOUsage.Height = 5
-	layout.DiskIOUsage.Border.Label = "Disk IO usage"
-	layout.FileSystemUsage = termui.NewList()
-	layout.FileSystemUsage.Height = 5
-	layout.FileSystemUsage.Border.Label = "Filesystem usage"
-	layout.InterfaceUsage = termui.NewList()
-	layout.InterfaceUsage.Height = 5
-	layout.InterfaceUsage.Border.Label = "Network usage"
-	layout.CgroupsCPU = termui.NewList()
-	layout.CgroupsCPU.Height = 10
-	layout.CgroupsCPU.Border.Label = "CPU(cgroups)"
-	layout.CgroupsMem = termui.NewList()
-	layout.CgroupsMem.Height = 10
-	layout.CgroupsMem.Border.Label = "Memory(cgroups)"
-	layout.Problems = termui.NewList()
-	layout.Problems.Height = 10
-	layout.Problems.Border.Label = "Problems"
-	termui.Body.AddRows(
-		termui.NewRow(
-			termui.NewCol(8, 0, layout.Summary),
-			termui.NewCol(4, 0, help)),
-		termui.NewRow(
-			termui.NewCol(6, 0, layout.ProcessesByCPU),
-			termui.NewCol(6, 0, layout.ProcessesByMemory)),
-		termui.NewRow(
-			termui.NewCol(8, 0, layout.ProcessesByIO),
-			termui.NewCol(4, 0, layout.DiskIOUsage)),
-		termui.NewRow(
-			termui.NewCol(6, 0, layout.FileSystemUsage),
-			termui.NewCol(6, 0, layout.InterfaceUsage)),
-		termui.NewRow(
-			termui.NewCol(6, 0, layout.CgroupsCPU),
-			termui.NewCol(6, 0, layout.CgroupsMem)),
-		termui.NewRow(termui.NewCol(12, 0, layout.Problems)))
-	termui.Body.Width = termui.TermWidth()
-	termui.Body.Align()
-	termui.Render(termui.Body)
-	return layout
-}
-
-func refreshUI() {
-	termui.Body.Width = termui.TermWidth()
-	termui.Body.Align()
-	termui.Render(termui.Body)
-}
-
 func main() {
 	// options
 	var batchmode, servermode bool
 	var address string
 	var stepSec int
 	var nIter int
+	var evt <-chan termui.Event
+	var widgets *osmain.DisplayWidgets
+	var uiSummaryBody *termui.Grid
+	var uiHelpBody *termui.Grid
+	var uiDetailList *termui.List
 
 	flag.BoolVar(&batchmode, "b", false, "Run in batch mode; suitable for parsing")
 	flag.BoolVar(&batchmode, "batchmode", false, "Run in batch mode; suitable for parsing")
@@ -120,8 +55,18 @@ func main() {
 	}
 
 	if !batchmode {
-		layout = setupDisplay()
+		err := termui.Init()
+		if err != nil {
+			log.Fatalf("Unable to initialize termui", err)
+		}
+		widgets = uiWidgets()
+		uiSummaryBody = uiSummary(widgets)
+		uiHelpBody = uiHelp()
+		uiDetailList = termui.NewList()
 		evt = termui.EventCh()
+		// display summary view
+		termui.Body = uiSummaryBody
+		uiRefresh()
 	}
 	// Initialize a metric context
 	m := metrics.NewMetricContext("system")
@@ -143,12 +88,48 @@ func main() {
 			// handle keypresses in interactive mode
 			select {
 			case e := <-evt:
-				if e.Type == termui.EventKey && e.Ch == 'q' {
-					termui.Close()
-					return
+				if e.Type == termui.EventKey {
+					switch e.Ch {
+					case 'q':
+						termui.Close()
+						return
+					case 'c':
+						uiDetailList = widgets.ProcessesByCPU
+						termui.Body = uiDetail(uiDetailList)
+					case 'd':
+						uiDetailList = widgets.DiskIOUsage
+						termui.Body = uiDetail(uiDetailList)
+					case 'C':
+						uiDetailList = widgets.CgroupsCPU
+						termui.Body = uiDetail(uiDetailList)
+					case 'f':
+						uiDetailList = widgets.FileSystemUsage
+						termui.Body = uiDetail(uiDetailList)
+					case 'm':
+						uiDetailList = widgets.ProcessesByMemory
+						termui.Body = uiDetail(uiDetailList)
+					case 'p':
+						uiDetailList = widgets.Problems
+						termui.Body = uiDetail(uiDetailList)
+					case 'M':
+						uiDetailList = widgets.CgroupsMem
+						termui.Body = uiDetail(uiDetailList)
+					case 'n':
+						uiDetailList = widgets.InterfaceUsage
+						termui.Body = uiDetail(uiDetailList)
+					case 'i':
+						uiDetailList = widgets.ProcessesByIO
+						termui.Body = uiDetail(uiDetailList)
+					case 's':
+						uiResetAttributes(widgets)
+						termui.Body = uiSummaryBody
+					case 'h':
+						termui.Body = uiHelpBody
+					}
+					uiRefresh()
 				}
 				if e.Type == termui.EventResize {
-					refreshUI()
+					uiRefresh()
 				}
 			default:
 				break // breaks out of select
@@ -162,7 +143,7 @@ func main() {
 		if nIter > 0 && iterationsRun > nIter {
 			break
 		}
-		stats.Print(batchmode, layout)
+		stats.Print(batchmode, widgets)
 		if !batchmode {
 			termui.Render(termui.Body)
 		}

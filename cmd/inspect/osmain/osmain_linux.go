@@ -5,7 +5,6 @@ package osmain
 
 import (
 	"fmt"
-	//"math"
 	"log"
 	"path/filepath"
 	"sort"
@@ -56,7 +55,7 @@ func printOsSpecific(batchmode bool, layout *DisplayWidgets, v interface{}) {
 	}
 	// Top N processes sorted by IO usage - requires root
 	procsByUsage := stats.osind.ProcessStat.ByIOUsage()
-	n := DisplayPidCount
+	n := MaxEntries
 	if len(procsByUsage) < n {
 		n = len(procsByUsage)
 	}
@@ -68,7 +67,7 @@ func printOsSpecific(batchmode bool, layout *DisplayWidgets, v interface{}) {
 			truncate(procsByUsage[i].User(), 10),
 			procsByUsage[i].Pid()))
 	}
-	for i := n; i < DisplayPidCount; i++ {
+	for i := n; i < MaxEntries; i++ {
 		io = append(io, fmt.Sprintf("%8s/s %10s %10s %8s", "-", "-", "-", "-"))
 	}
 	displayList(batchmode, "io", layout, io)
