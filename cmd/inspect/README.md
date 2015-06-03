@@ -2,7 +2,7 @@
 
 inspect command line is a utility that gives a
 brief overview on current state of system resource
-usage.
+usage and ability to dig through details. 
 
 Supported platforms: linux, MacOSX 10.9
 
@@ -35,10 +35,10 @@ http://godoc.org/github.com/square/inspect/metrics
 
 ##### Summary View
 
-<img src="https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/summary.png" height="259" width="208">
+<img src="https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/summary.png" height="540" width="507">
 
 ##### Details View
-<img src="https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/details.png" height="259" width="208">
+<img src="https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/details.png" height="540" width="507">
 
 ###### Server 
 
