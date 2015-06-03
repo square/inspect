@@ -37,6 +37,7 @@ type MysqlStatMetrics struct {
 	ReplicationRunning       *metrics.Gauge
 
 	//GetGlobalStatus
+	AbortedConnects           *metrics.Counter
 	BinlogCacheDiskUse        *metrics.Counter
 	BinlogCacheUse            *metrics.Counter
 	ComAlterTable             *metrics.Counter
@@ -360,6 +361,7 @@ func (s *MysqlStat) GetGlobalStatus() {
 		return
 	}
 	vars := map[string]interface{}{
+		"Aborted_connects":              s.Metrics.AbortedConnects,
 		"Binlog_cache_disk_use":         s.Metrics.BinlogCacheDiskUse,
 		"Binlog_cache_use":              s.Metrics.BinlogCacheUse,
 		"Com_alter_table":               s.Metrics.ComAlterTable,
