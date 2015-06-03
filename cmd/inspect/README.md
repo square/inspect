@@ -33,7 +33,12 @@ http://godoc.org/github.com/square/inspect/metrics
 
 ./bin/inspect (run as root for IO statistics on Linux)
 
-![](https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/summary.png)
+##### Summary View
+
+<img src="https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/summary.png" height="259" width="208">
+
+##### Details View
+<img src="https://raw.githubusercontent.com/square/inspect/master/cmd/inspect/screenshots/details.png" height="259" width="208">
 
 ###### Server 
 
