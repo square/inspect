@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/gizak/termui"
-	"github.com/sorawee/inspect/metrics"
-	"github.com/sorawee/inspect/os/cpustat"
-	"github.com/sorawee/inspect/os/memstat"
-	"github.com/sorawee/inspect/os/misc"
-	"github.com/sorawee/inspect/os/pidstat"
+	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/os/cpustat"
+	"github.com/square/inspect/os/memstat"
+	"github.com/square/inspect/os/misc"
+	"github.com/square/inspect/os/pidstat"
 )
 
 type osIndependentStats struct {

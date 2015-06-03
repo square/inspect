@@ -5,7 +5,7 @@ package osmain
 import (
 	"time"
 
-	"github.com/sorawee/inspect/metrics"
+	"github.com/square/inspect/metrics"
 )
 
 type darwinStats struct {

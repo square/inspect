@@ -3,7 +3,7 @@
 package metricchecks
 
 import (
-	"github.com/sorawee/inspect/metrics"
+	"github.com/square/inspect/metrics"
 )
 
 type Checker interface {

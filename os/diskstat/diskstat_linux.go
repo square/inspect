@@ -13,8 +13,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sorawee/inspect/metrics"
-	"github.com/sorawee/inspect/os/misc"
+	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/os/misc"
 )
 
 var root = "/"

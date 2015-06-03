@@ -12,9 +12,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sorawee/inspect/metrics"
-	"github.com/sorawee/inspect/os/misc"
-	"github.com/sorawee/inspect/postgres/tools"
+	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/os/misc"
+	"github.com/square/inspect/postgres/tools"
 )
 
 //PostgresStat stores info on the db

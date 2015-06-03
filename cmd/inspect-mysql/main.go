@@ -14,11 +14,11 @@ import (
 	"time"
 
 	"code.google.com/p/goconf/conf"
-	"github.com/sorawee/inspect/metricchecks"
-	"github.com/sorawee/inspect/metrics"
-	"github.com/sorawee/inspect/mysql/dbstat"
-	"github.com/sorawee/inspect/mysql/tablestat"
-	"github.com/sorawee/inspect/mysql/userstat"
+	"github.com/square/inspect/metricchecks"
+	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/mysql/dbstat"
+	"github.com/square/inspect/mysql/tablestat"
+	"github.com/square/inspect/mysql/userstat"
 )
 
 func main() {

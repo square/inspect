@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/sorawee/inspect/metrics"
-	"github.com/sorawee/inspect/os/misc"
+	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/os/misc"
 )
 
 // root is the root of filesystem that hosts proc. This makes

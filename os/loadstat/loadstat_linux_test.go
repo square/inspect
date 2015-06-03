@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sorawee/inspect/metrics"
+	"github.com/square/inspect/metrics"
 )
 
 func TestLoadstat(t *testing.T) {

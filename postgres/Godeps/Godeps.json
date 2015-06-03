@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/sorawee/inspect/postgres",
+	"ImportPath": "github.com/square/inspect/postgres",
 	"GoVersion": "go1.2.1",
 	"Deps": [
 		{

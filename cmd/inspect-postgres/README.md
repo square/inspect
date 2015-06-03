@@ -20,7 +20,7 @@ inspect gathers the following metrics:
 ##Installation
 
 1. Get Go
-2. `go get -v -u github.com/sorawee/inspect/postgres`
+2. `go get -v -u github.com/square/inspect/postgres`
 
 ##Dependencies
 Package dependency is managed by godep (https://github.com/tools/godep). Follow the docs there when adding/removing/updating
@@ -65,8 +65,8 @@ _inspect-postgres_ can be run in server mode to run continuously and expose all 
 
 ```go
 // Import packages
-import "github.com/sorawee/inspect/postgres"
-import "github.com/sorawee/inspect/metrics"
+import "github.com/square/inspect/postgres"
+import "github.com/square/inspect/metrics"
 
 // Initialize a metric context
 m := metrics.NewMetricContext("postgres")

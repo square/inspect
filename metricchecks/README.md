@@ -7,8 +7,8 @@ package dependencies.
 ##example api usage
 
 ```
-import "github.com/sorawee/inspect/metricchecks"
-import "github.com/sorawee/inspect/metrics"
+import "github.com/square/inspect/metricchecks"
+import "github.com/square/inspect/metrics"
 
 m := metrics.NewMetricContext("test")
 

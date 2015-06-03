@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sorawee/inspect/metrics"
-	"github.com/sorawee/inspect/postgres/stat"
+	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/postgres/stat"
 )
 
 func main() {

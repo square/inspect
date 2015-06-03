@@ -4,10 +4,10 @@ os is a collection of libraries for gathering operating system metrics.
   
 ###### Installation
 1. Get go
-2. go get -v -u github.com/sorawee/inspect/os/[module]
+2. go get -v -u github.com/square/inspect/os/[module]
 
 ###### Documentation
-http://godoc.org/github.com/sorawee/inspect/os
+http://godoc.org/github.com/square/inspect/os
 
 ###### Example API use 
 ```go
@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sorawee/inspect/metrics"
-	"github.com/sorawee/inspect/os/cpustat"
+	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/os/cpustat"
 )
 
 func main() {
