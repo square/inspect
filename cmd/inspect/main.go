@@ -84,75 +84,74 @@ func main() {
 	}
 
 	iterationsRun := 0
-	for {
-		if !batchmode {
-			// handle keypresses in interactive mode
-			select {
-			case e := <-evt:
-				if e.Type == termui.EventKey {
-					switch e.Ch {
-					case 'q':
-						termui.Close()
-						return
-					case 'c':
-						uiDetailList = widgets.ProcessesByCPU
-						termui.Body = uiDetail(uiDetailList)
-					case 'd':
-						uiDetailList = widgets.DiskIOUsage
-						termui.Body = uiDetail(uiDetailList)
-					case 'C':
-						uiDetailList = widgets.CgroupsCPU
-						termui.Body = uiDetail(uiDetailList)
-					case 'f':
-						uiDetailList = widgets.FileSystemUsage
-						termui.Body = uiDetail(uiDetailList)
-					case 'm':
-						uiDetailList = widgets.ProcessesByMemory
-						termui.Body = uiDetail(uiDetailList)
-					case 'p':
-						uiDetailList = widgets.Problems
-						termui.Body = uiDetail(uiDetailList)
-					case 'M':
-						uiDetailList = widgets.CgroupsMem
-						termui.Body = uiDetail(uiDetailList)
-					case 'n':
-						uiDetailList = widgets.InterfaceUsage
-						termui.Body = uiDetail(uiDetailList)
-					case 'i':
-						uiDetailList = widgets.ProcessesByIO
-						termui.Body = uiDetail(uiDetailList)
-					case 's':
-						uiResetAttributes(widgets)
-						termui.Body = uiSummaryBody
-					case 'h':
-						termui.Body = uiHelpBody
-					}
-					uiRefresh()
+	go func() {
+		for {
+			// Clear previous problems
+			var problems []string
+			stats.Problems = problems
+			// Quit after n iterations if specified
+			iterationsRun++
+			if nIter > 0 && iterationsRun > nIter {
+				break
+			}
+			stats.Print(batchmode, widgets)
+			if !batchmode {
+				termui.Render(termui.Body)
+			}
+			time.Sleep(step)
+			// be aggressive about reclaiming memory
+			// tradeoff with CPU usage
+			runtime.GC()
+			debug.FreeOSMemory()
+		}
+	}()
+
+	if !batchmode {
+		for {
+			e := <-evt
+			if e.Type == termui.EventKey {
+				switch e.Ch {
+				case 'q':
+					termui.Close()
+					return
+				case 'c':
+					uiDetailList = widgets.ProcessesByCPU
+					termui.Body = uiDetail(uiDetailList)
+				case 'd':
+					uiDetailList = widgets.DiskIOUsage
+					termui.Body = uiDetail(uiDetailList)
+				case 'C':
+					uiDetailList = widgets.CgroupsCPU
+					termui.Body = uiDetail(uiDetailList)
+				case 'f':
+					uiDetailList = widgets.FileSystemUsage
+					termui.Body = uiDetail(uiDetailList)
+				case 'm':
+					uiDetailList = widgets.ProcessesByMemory
+					termui.Body = uiDetail(uiDetailList)
+				case 'p':
+					uiDetailList = widgets.Problems
+					termui.Body = uiDetail(uiDetailList)
+				case 'M':
+					uiDetailList = widgets.CgroupsMem
+					termui.Body = uiDetail(uiDetailList)
+				case 'n':
+					uiDetailList = widgets.InterfaceUsage
+					termui.Body = uiDetail(uiDetailList)
+				case 'i':
+					uiDetailList = widgets.ProcessesByIO
+					termui.Body = uiDetail(uiDetailList)
+				case 's':
+					uiResetAttributes(widgets)
+					termui.Body = uiSummaryBody
+				case 'h':
+					termui.Body = uiHelpBody
 				}
-				if e.Type == termui.EventResize {
-					uiRefresh()
-				}
-			default:
-				break // breaks out of select
+				uiRefresh()
+			}
+			if e.Type == termui.EventResize {
+				uiRefresh()
 			}
 		}
-		// Clear previous problems
-		var problems []string
-		stats.Problems = problems
-		// Quit after n iterations if specified
-		iterationsRun++
-		if nIter > 0 && iterationsRun > nIter {
-			break
-		}
-		stats.Print(batchmode, widgets)
-		if !batchmode {
-			termui.Render(termui.Body)
-		}
-		// sleep for step
-		time.Sleep(step / 2)
-		// be aggressive about reclaiming memory
-		// tradeoff with CPU usage
-		runtime.GC()
-		debug.FreeOSMemory()
 	}
 }
