@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	var user, address, conf, group string
+	var user, address, conf string
 	var stepSec int
 	var servermode, human, loop bool
 
@@ -27,7 +27,6 @@ func main() {
 	flag.StringVar(&address, "address", ":12345", "address to listen on for http if running in server mode")
 	flag.IntVar(&stepSec, "step", 2, "metrics are collected every step seconds")
 	flag.StringVar(&conf, "conf", "/root/.my.cnf", "configuration file")
-	flag.StringVar(&group, "group", "", "group of metrics to collect")
 	flag.BoolVar(&human, "h", false, "Makes output in MB for human readable sizes")
 	flag.BoolVar(&loop, "loop", false, "loop")
 	flag.Parse()

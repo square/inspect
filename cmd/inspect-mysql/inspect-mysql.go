@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	var user, password, host, address, cnf, group, form, checkConfigFile string
+	var user, password, host, address, cnf, form, checkConfigFile string
 	var stepSec int
 	var servermode, human, loop bool
 	var checkConfig *conf.ConfigFile
@@ -42,9 +42,7 @@ func main() {
 	flag.StringVar(&form, "form", "graphite", "output format of metrics to stdout")
 	flag.BoolVar(&human, "human", false,
 		"Makes output in MB for human readable sizes")
-	flag.StringVar(&group, "group", "", "group of metrics to collect")
-	flag.BoolVar(&loop, "loop", false,
-		"loop on collecting metrics when specifying group")
+	flag.BoolVar(&loop, "loop", false, "loop on collecting metrics")
 	flag.StringVar(&checkConfigFile, "check", "", "config file to check metrics with")
 	flag.Parse()
 
@@ -91,50 +89,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	//if a group is defined, run metrics collections for just that group
-	if group != "" {
-		//call the specific method name for the wanted group of metrics
-		sqlstat.CallByMethodName(group)
-		sqlstatTables.CallByMethodName(group)
-		sqlstatUsers.CallByMethodName(group)
-		if checkConfigFile != "" {
-			checkMetrics(c, m)
-		}
-		outputTableMetrics(sqlstat, sqlstatTables, m, form)
-		//if metrics collection for this group is wanted on a loop,
-		if loop {
-			ticker := time.NewTicker(step)
-			for _ = range ticker.C {
-				sqlstat.CallByMethodName(group)
-				sqlstatTables.CallByMethodName(group)
-				sqlstatUsers.CallByMethodName(group)
-				if checkConfigFile != "" {
-					checkMetrics(c, m)
-				}
-				outputTableMetrics(sqlstat, sqlstatTables, m, form)
-				outputUserMetrics(sqlstatUsers, m, form)
-			}
-		}
-		//if no group is specified, just run all metrics collections
-	} else {
-		sqlstat.Collect()
-		sqlstatTables.Collect()
-		sqlstatUsers.Collect()
+	sqlstat.Collect()
+	sqlstatTables.Collect()
+	sqlstatUsers.Collect()
 
-		if checkConfigFile != "" {
-			checkMetrics(c, m)
-		}
-		outputTableMetrics(sqlstat, sqlstatTables, m, form)
-		outputUserMetrics(sqlstatUsers, m, form)
-		if loop {
-			ticker := time.NewTicker(step)
-			for _ = range ticker.C {
-				sqlstat.Collect()
-				sqlstatTables.Collect()
-				sqlstatUsers.Collect()
-				outputTableMetrics(sqlstat, sqlstatTables, m, form)
-				outputUserMetrics(sqlstatUsers, m, form)
-			}
+	if checkConfigFile != "" {
+		checkMetrics(c, m)
+	}
+	outputTableMetrics(sqlstat, sqlstatTables, m, form)
+	outputUserMetrics(sqlstatUsers, m, form)
+	if loop {
+		ticker := time.NewTicker(step)
+		for _ = range ticker.C {
+			sqlstat.Collect()
+			sqlstatTables.Collect()
+			sqlstatUsers.Collect()
+			outputTableMetrics(sqlstat, sqlstatTables, m, form)
+			outputUserMetrics(sqlstatUsers, m, form)
 		}
 	}
 	sqlstat.Close()
