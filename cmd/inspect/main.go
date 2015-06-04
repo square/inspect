@@ -19,6 +19,8 @@ import (
 )
 
 func main() {
+	// never use more than one process
+	runtime.GOMAXPROCS(1)
 	// options
 	var batchmode, servermode bool
 	var address string
