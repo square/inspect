@@ -72,7 +72,7 @@ func main() {
 	}
 
 	//initialize metrics collectors to not loop and collect
-	sqlstat, err := dbstat.New(m, user, password, host, cnf)
+	sqlstatDBs, err := dbstat.New(m, user, password, host, cnf)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -89,26 +89,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	sqlstat.Collect()
+	sqlstatDBs.Collect()
 	sqlstatTables.Collect()
 	sqlstatUsers.Collect()
 
 	if checkConfigFile != "" {
 		checkMetrics(c, m)
 	}
-	outputTableMetrics(sqlstat, sqlstatTables, m, form)
+	outputTableMetrics(sqlstatDBs, sqlstatTables, m, form)
 	outputUserMetrics(sqlstatUsers, m, form)
 	if loop {
 		ticker := time.NewTicker(step)
 		for _ = range ticker.C {
-			sqlstat.Collect()
+			sqlstatDBs.Collect()
 			sqlstatTables.Collect()
 			sqlstatUsers.Collect()
-			outputTableMetrics(sqlstat, sqlstatTables, m, form)
+			outputTableMetrics(sqlstatDBs, sqlstatTables, m, form)
 			outputUserMetrics(sqlstatUsers, m, form)
 		}
 	}
-	sqlstat.Close()
+	sqlstatDBs.Close()
 	sqlstatTables.Close()
 	sqlstatUsers.Close()
 }
