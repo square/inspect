@@ -57,7 +57,7 @@ func uiResetAttributes(widgets *osmain.DisplayWidgets) {
 
 func uiSummary(widgets *osmain.DisplayWidgets) *termui.Grid {
 	body := termui.NewGrid()
-	help := termui.NewPar("q:quit h:help (?):details")
+	help := termui.NewPar("q:quit h:help c:cpu etc")
 	help.Height = 3
 	body.AddRows(
 		termui.NewRow(
@@ -85,7 +85,15 @@ func uiHelp() *termui.Grid {
 	kbHelp.Items = []string{
 		"h: Help",
 		"s: Summary view",
-		"(?): Details for subsection indicated by key in parentheses",
+		"c: processes by cpu usage",
+		"C: cgroups for cpu subsystem",
+		"m: processes by memory usage",
+		"M: cgroups for memory subsystem",
+		"i: processes by io",
+		"d: disk io statistics",
+		"f: filesystem statistics",
+		"n: network interface statistics",
+		"p: problems found",
 		"q: Quit",
 	}
 	kbHelp.Border.Label = "Keyboard shortcuts"
