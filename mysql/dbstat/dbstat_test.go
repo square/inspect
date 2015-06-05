@@ -76,12 +76,12 @@ func (s *testMysqlDB) SetMaxConnections(maxConns int) {
 	return
 }
 
-//initializes a test instance of MysqlStat.
+//initializes a test instance of MysqlStatDBs.
 // instance does not connect with a db
-func initMysqlStat() *MysqlStat {
+func initMysqlStatDBs() *MysqlStatDBs {
 	syscall.Dup2(int(logFile.Fd()), 2)
-	s := new(MysqlStat)
-	s.db = &testMysqlDB{
+	s := new(MysqlStatDBs)
+	s.Db = &testMysqlDB{
 		Logger: log.New(os.Stderr, "TESTING LOG: ", log.Lshortfile),
 	}
 	s.Metrics = MysqlStatMetricsNew(metrics.NewMetricContext("system"))
@@ -121,8 +121,8 @@ func checkResults() string {
 // More complex string manipulations are further tested in
 // later test functions.
 func TestBasic(t *testing.T) {
-	//intitialize MysqlStat
-	s := initMysqlStat()
+	//intitialize MysqlStatDBs
+	s := initMysqlStatDBs()
 
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
@@ -226,8 +226,8 @@ func TestBasic(t *testing.T) {
 
 //test parsing of version
 func TestVersion1(t *testing.T) {
-	//intialize MysqlStat
-	s := initMysqlStat()
+	//intialize MysqlStatDBs
+	s := initMysqlStatDBs()
 
 	//set desired test result
 	testquerycol = map[string]map[string][]string{
@@ -251,8 +251,8 @@ func TestVersion1(t *testing.T) {
 }
 
 func TestVersion2(t *testing.T) {
-	//intialize MysqlStat
-	s := initMysqlStat()
+	//intialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	//repeat for different test results
 	testquerycol = map[string]map[string][]string{
 		versionQuery: map[string][]string{
@@ -271,8 +271,8 @@ func TestVersion2(t *testing.T) {
 }
 
 func TestVersion3(t *testing.T) {
-	//intialize MysqlStat
-	s := initMysqlStat()
+	//intialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	testquerycol = map[string]map[string][]string{
 		versionQuery: map[string][]string{
 			"VERSION()": []string{"abcdefg-123-456-qwerty"},
@@ -291,8 +291,8 @@ func TestVersion3(t *testing.T) {
 
 //Test Parsing of sessions query
 func TestSessions(t *testing.T) {
-	//initialize MysqlStat
-	s := initMysqlStat()
+	//initialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	//set desired query output
 	testquerycol = map[string]map[string][]string{
 		sessionQuery1: map[string][]string{
@@ -332,8 +332,8 @@ func TestSessions(t *testing.T) {
 
 // Test basic parsing of slave info query
 func TestSlave1(t *testing.T) {
-	//intitialize MysqlStat
-	s := initMysqlStat()
+	//intitialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		//getSlaveStats()
@@ -362,8 +362,8 @@ func TestSlave1(t *testing.T) {
 
 // Test when slave is down and backup isn't running
 func TestSlave2(t *testing.T) {
-	//intitialize MysqlStat
-	s := initMysqlStat()
+	//intitialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		//getSlaveStats()
@@ -392,8 +392,8 @@ func TestSlave2(t *testing.T) {
 
 // Test when slave is down and backup is running
 func TestSlave3(t *testing.T) {
-	//intitialize MysqlStat
-	s := initMysqlStat()
+	//intitialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		//getSlaveStats()
