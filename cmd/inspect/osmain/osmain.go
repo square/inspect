@@ -18,8 +18,8 @@ type osIndependentStats struct {
 	Procs *pidstat.ProcessStat
 }
 
-// Number of Pids to display for top-N metrics
-const DisplayPidCount = 3
+// Number of Pids(in future cgroups etc) to display for top-N metrics
+const MaxEntries = 15
 
 // DisplayWidgets represents various variables used for display
 // Perhaps this belongs to main package
@@ -95,8 +95,8 @@ func (stats *Stats) Print(batchmode bool, layout *DisplayWidgets) {
 	}
 	// Processes by cpu usage
 	var cpu []string
-	n := DisplayPidCount
-	if len(procsByCPUUsage) < DisplayPidCount {
+	n := MaxEntries
+	if len(procsByCPUUsage) < MaxEntries {
 		n = len(procsByCPUUsage)
 	}
 	for i := 0; i < n; i++ {
@@ -106,14 +106,14 @@ func (stats *Stats) Print(batchmode bool, layout *DisplayWidgets) {
 			truncate(procsByCPUUsage[i].User(), 10),
 			procsByCPUUsage[i].Pid()))
 	}
-	for i := n; i < DisplayPidCount; i++ {
+	for i := n; i < MaxEntries; i++ {
 		cpu = append(cpu, fmt.Sprintf("%5s %10s %10s %8s", "-", "-", "-", "-"))
 	}
 	displayList(batchmode, "cpu", layout, cpu)
 	// Top processes by mem
 	var mem []string
-	n = DisplayPidCount
-	if len(procsByMemUsage) < DisplayPidCount {
+	n = MaxEntries
+	if len(procsByMemUsage) < MaxEntries {
 		n = len(procsByMemUsage)
 	}
 	for i := 0; i < n; i++ {
@@ -123,7 +123,7 @@ func (stats *Stats) Print(batchmode bool, layout *DisplayWidgets) {
 			truncate(procsByMemUsage[i].User(), 10),
 			procsByMemUsage[i].Pid()))
 	}
-	for i := n; i < DisplayPidCount; i++ {
+	for i := n; i < MaxEntries; i++ {
 		mem = append(mem, fmt.Sprintf("%8s %10s %10s %8s", "-", "-", "-", "-"))
 	}
 	displayList(batchmode, "memory", layout, mem)
