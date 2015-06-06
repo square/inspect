@@ -227,11 +227,11 @@ func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlS
 	// connect to database
 	var err error
 	s.Db, err = tools.New(user, password, host, config)
-	s.SetMaxConnections(defaultMaxConns)
 	if err != nil {
 		s.Db.Log(err)
 		return nil, err
 	}
+	s.SetMaxConnections(defaultMaxConns)
 	s.Metrics = MysqlStatMetricsNew(m)
 
 	return s, nil

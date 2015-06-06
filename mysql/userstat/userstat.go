@@ -47,12 +47,12 @@ func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlS
 	// connect to database
 	var err error
 	s.Db, err = tools.New(user, password, host, config)
-	s.nLock.Lock()
-	s.Users = make(map[string]*MysqlStatPerUser)
-	s.nLock.Unlock()
 	if err != nil { //error in connecting to database
 		return nil, err
 	}
+	s.nLock.Lock()
+	s.Users = make(map[string]*MysqlStatPerUser)
+	s.nLock.Unlock()
 	return s, nil
 }
 
