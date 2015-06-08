@@ -11,6 +11,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"sync"
 	"time"
 
 	"github.com/gizak/termui"
@@ -21,6 +22,8 @@ import (
 func main() {
 	// never use more than one process
 	runtime.GOMAXPROCS(1)
+	// wait group to let the main program run forever in batchmode
+	var wg sync.WaitGroup
 	// options
 	var batchmode, servermode bool
 	var address string
@@ -86,6 +89,8 @@ func main() {
 	}
 
 	iterationsRun := 0
+	// runs forever
+	wg.Add(1)
 	go func() {
 		for {
 			// Clear previous problems
@@ -156,4 +161,5 @@ func main() {
 			}
 		}
 	}
+	wg.Wait()
 }
