@@ -74,16 +74,16 @@ func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlS
 	// connect to database
 	var err error
 	s.Db, err = tools.New(user, password, host, config)
-	s.nLock.Lock()
-	s.DBs = make(map[string]*DBStats)
-	s.nLock.Unlock()
 	if err != nil { //error in connecting to database
 		return nil, err
 	}
+	s.nLock.Lock()
+	s.DBs = make(map[string]*DBStats)
+	s.nLock.Unlock()
 	return s, nil
 }
 
-//initialize  per database metrics
+// Initialize per database metrics
 func newMysqlStatPerDB(m *metrics.MetricContext, dbname string) *MysqlStatPerDB {
 	o := new(MysqlStatPerDB)
 	misc.InitializeMetrics(o, m, "mysqlstat."+dbname, true)

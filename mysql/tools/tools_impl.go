@@ -103,7 +103,9 @@ func (database *mysqlDB) makeQuery(query string) ([]string, [][]string, error) {
 		}
 	}
 	err = rows.Err()
-
+	if err != nil {
+		return nil, nil, err
+	}
 	return columnNames, values, nil
 }
 
@@ -114,11 +116,14 @@ func (database *mysqlDB) SetMaxConnections(maxConns int) {
 // QueryReturnColumnDict returns values of query in a mapping of column_name -> column
 func (database *mysqlDB) QueryReturnColumnDict(query string) (map[string][]string, error) {
 	columnNames, values, err := database.queryDb(query)
+	if err != nil {
+		return nil, err
+	}
 	result := make(map[string][]string)
 	for i, col := range columnNames {
 		result[col] = values[i]
 	}
-	return result, err
+	return result, nil
 }
 
 //return values of query in a mapping of first columns entry -> row

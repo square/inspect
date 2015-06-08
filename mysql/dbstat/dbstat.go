@@ -224,17 +224,15 @@ SELECT COUNT(*) as count
 // mysql. username and password can be left as "" if a config file is specified.
 func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlStatDBs, error) {
 	s := new(MysqlStatDBs)
-
 	// connect to database
 	var err error
 	s.Db, err = tools.New(user, password, host, config)
-	s.SetMaxConnections(defaultMaxConns)
-	if err != nil {
+	if err != nil { //error in connecting to database
 		s.Db.Log(err)
 		return nil, err
 	}
+	s.SetMaxConnections(defaultMaxConns)
 	s.Metrics = MysqlStatMetricsNew(m)
-
 	return s, nil
 }
 
@@ -311,10 +309,10 @@ func (s *MysqlStatDBs) GetSlaveStats() {
 	if len(relayMasterLogFile) > 0 {
 		tmp := strings.Split(string(relayMasterLogFile[0]), ".")
 		slaveSeqFile, err := strconv.ParseInt(tmp[len(tmp)-1], 10, 64)
-		s.Metrics.SlaveSeqFile.Set(float64(slaveSeqFile))
 		if err != nil {
 			s.Db.Log(err)
 		}
+		s.Metrics.SlaveSeqFile.Set(float64(slaveSeqFile))
 	}
 
 	if len(res["Exec_Master_Log_Pos"]) > 0 {
@@ -556,11 +554,11 @@ func (s *MysqlStatDBs) GetVersion() {
 	leading := float64(len(strings.Split(version, ".")[0]))
 	version = strings.Replace(version, ".", "", -1)
 	ver, err := strconv.ParseFloat(version, 64)
-	ver /= math.Pow(10.0, (float64(len(version)) - leading))
-	s.Metrics.Version.Set(ver)
 	if err != nil {
 		s.Db.Log(err)
 	}
+	ver /= math.Pow(10.0, (float64(len(version)) - leading))
+	s.Metrics.Version.Set(ver)
 	s.Wg.Done()
 	return
 }
