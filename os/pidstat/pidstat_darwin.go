@@ -4,12 +4,13 @@ package pidstat
 
 import (
 	"fmt"
-	"github.com/square/inspect/metrics"
-	"github.com/square/inspect/os/misc"
 	"os/user"
 	"reflect"
 	"time"
 	"unsafe"
+
+	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/os/misc"
 )
 
 // https://developer.apple.com/library/Mac/qa/qa1398/_index.html
