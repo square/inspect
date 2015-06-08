@@ -32,6 +32,7 @@ type MysqlStatMetrics struct {
 	SlaveSeqFile             *metrics.Gauge
 	SlavePosition            *metrics.Counter
 	ReplicationRunning       *metrics.Gauge
+	RelayLogSpace            *metrics.Gauge
 
 	//GetGlobalStatus
 	AbortedConnects           *metrics.Counter
@@ -323,6 +324,15 @@ func (s *MysqlStatDBs) GetSlaveStats() {
 			return
 		}
 		s.Metrics.SlavePosition.Set(uint64(slavePosition))
+	}
+
+	if (len(res["Relay_Log_Space"]) > 0) && (string(res["Relay_Log_Space"][0]) != "") {
+		relay_log_space, err := strconv.ParseFloat(string(res["Relay_Log_Space"][0]), 64)
+		if err != nil {
+			s.Db.Log(err)
+		} else {
+			s.Metrics.RelayLogSpace.Set(float64(relay_log_space))
+		}
 	}
 	s.Wg.Done()
 	return
