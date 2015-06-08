@@ -83,7 +83,7 @@ func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlS
 	return s, nil
 }
 
-//initialize  per database metrics
+// Initialize per database metrics
 func newMysqlStatPerDB(m *metrics.MetricContext, dbname string) *MysqlStatPerDB {
 	o := new(MysqlStatPerDB)
 	misc.InitializeMetrics(o, m, "mysqlstat."+dbname, true)

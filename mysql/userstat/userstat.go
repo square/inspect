@@ -56,7 +56,7 @@ func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlS
 	return s, nil
 }
 
-//initialize user statistics
+// Initialize per user metrics
 func newMysqlStatPerUser(m *metrics.MetricContext, user string) *MysqlStatPerUser {
 	o := new(MysqlStatPerUser)
 	misc.InitializeMetrics(o, m, "mysqlstat."+user, true)
