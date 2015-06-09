@@ -3,6 +3,7 @@ package metricchecks
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/square/inspect/metrics"
 
@@ -30,6 +31,8 @@ func initMetricsJson() {
 		http.HandleFunc("/api/v1/metrics.json/", m.HttpJsonHandler)
 		http.ListenAndServe("localhost:12345", nil)
 	}()
+	// TODO: rewrite these tests to be not this fragile
+	time.Sleep(1 * time.Millisecond)
 	return
 }
 
