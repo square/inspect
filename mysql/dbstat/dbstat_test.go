@@ -131,6 +131,7 @@ func TestBasic(t *testing.T) {
 			"Seconds_Behind_Master": []string{"8"},
 			"Relay_Master_Log_File": []string{"some-name-bin.010"},
 			"Exec_Master_Log_Pos":   []string{"79"},
+			"Relay_Log_Space":       []string{"123"},
 		},
 		//getOldest
 		oldestQuery: map[string][]string{
@@ -192,6 +193,7 @@ func TestBasic(t *testing.T) {
 		s.Metrics.SlaveSecondsBehindMaster: float64(8),
 		s.Metrics.SlaveSeqFile:             float64(10),
 		s.Metrics.SlavePosition:            uint64(79),
+		s.Metrics.RelayLogSpace:            float64(123),
 		s.Metrics.Queries:                  uint64(8),
 		s.Metrics.Uptime:                   uint64(100),
 		s.Metrics.ThreadsRunning:           float64(5),
@@ -341,6 +343,7 @@ func TestSlave1(t *testing.T) {
 			"Seconds_Behind_Master": []string{"80"},
 			"Relay_Master_Log_File": []string{"some-name-bin.01345"},
 			"Exec_Master_Log_Pos":   []string{"7"},
+			"Relay_Log_Space":       []string{"2"},
 		},
 		slaveBackupQuery: map[string][]string{
 			"count": []string{"0"},
@@ -351,6 +354,7 @@ func TestSlave1(t *testing.T) {
 		s.Metrics.SlaveSeqFile:             float64(1345),
 		s.Metrics.SlavePosition:            uint64(7),
 		s.Metrics.ReplicationRunning:       float64(1),
+		s.Metrics.RelayLogSpace:            float64(2),
 	}
 	s.Collect()
 	time.Sleep(time.Millisecond * 1000 * 1)
@@ -371,6 +375,7 @@ func TestSlave2(t *testing.T) {
 			"Seconds_Behind_Master": []string{"NULL"},
 			"Relay_Master_Log_File": []string{"some.name.bin.01345"},
 			"Exec_Master_Log_Pos":   []string{"7"},
+			"Relay_Log_Space":       []string{"0"},
 		},
 		slaveBackupQuery: map[string][]string{
 			"count": []string{"0"},
@@ -381,6 +386,7 @@ func TestSlave2(t *testing.T) {
 		s.Metrics.SlaveSeqFile:             float64(1345),
 		s.Metrics.SlavePosition:            uint64(7),
 		s.Metrics.ReplicationRunning:       float64(-1),
+		s.Metrics.RelayLogSpace:            float64(0),
 	}
 	s.Collect()
 	time.Sleep(time.Millisecond * 1000 * 1)
@@ -401,6 +407,7 @@ func TestSlave3(t *testing.T) {
 			"Seconds_Behind_Master": []string{"NULL"},
 			"Relay_Master_Log_File": []string{"some.name.bin.01345"},
 			"Exec_Master_Log_Pos":   []string{"7"},
+			"Relay_Log_Space":       []string{"0"},
 		},
 		slaveBackupQuery: map[string][]string{
 			"count": []string{"1"},
@@ -411,6 +418,7 @@ func TestSlave3(t *testing.T) {
 		s.Metrics.SlaveSeqFile:             float64(1345),
 		s.Metrics.SlavePosition:            uint64(7),
 		s.Metrics.ReplicationRunning:       float64(1),
+		s.Metrics.RelayLogSpace:            float64(0),
 	}
 	s.Collect()
 	time.Sleep(time.Millisecond * 1000 * 1)
