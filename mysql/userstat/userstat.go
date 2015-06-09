@@ -32,9 +32,9 @@ type MysqlStatUsers struct {
 
 // MysqlStatPerUser represents metrics
 type MysqlStatPerUser struct {
-	TotalConnections      *metrics.Counter
-	ConcurrentConnections *metrics.Counter
-	ConnectedTime         *metrics.Counter
+	TotalConnections      *metrics.Gauge
+	ConcurrentConnections *metrics.Gauge
+	ConnectedTime         *metrics.Gauge
 }
 
 // New initializes mysqlstat and returns it
@@ -103,11 +103,11 @@ func (s *MysqlStatUsers) GetUserStatistics() {
 			// cannot use reflection to get a field dynamically because it's too slow
 			switch {
 			case queryField == "total_connections":
-				s.Users[user].TotalConnections.Set(uint64(field))
+				s.Users[user].TotalConnections.Set(float64(field))
 			case queryField == "concurrent_connections":
-				s.Users[user].ConcurrentConnections.Set(uint64(field))
+				s.Users[user].ConcurrentConnections.Set(float64(field))
 			case queryField == "connected_time":
-				s.Users[user].ConnectedTime.Set(uint64(field))
+				s.Users[user].ConnectedTime.Set(float64(field))
 			}
 			s.nLock.Unlock()
 		}
@@ -121,11 +121,11 @@ func (s *MysqlStatUsers) GetUserStatistics() {
 func (s *MysqlStatUsers) FormatGraphite(w io.Writer) error {
 	for username, user := range s.Users {
 		fmt.Fprintln(w, username+".TotalConnections "+
-			strconv.FormatUint(user.TotalConnections.Get(), 10))
+			strconv.FormatFloat(user.TotalConnections.Get(), 'f', 5, 64))
 		fmt.Fprintln(w, username+".ConcurrentConnections "+
-			strconv.FormatUint(user.ConcurrentConnections.Get(), 10))
+			strconv.FormatFloat(user.ConcurrentConnections.Get(), 'f', 5, 64))
 		fmt.Fprintln(w, username+".ConnectedTime "+
-			strconv.FormatUint(user.ConnectedTime.Get(), 10))
+			strconv.FormatFloat(user.ConnectedTime.Get(), 'f', 5, 64))
 	}
 	return nil
 }
