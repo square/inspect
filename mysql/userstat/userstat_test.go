@@ -125,6 +125,7 @@ func TestUserStats(t *testing.T) {
 			"total_connections":      []string{"11", "12", "13", "14", "15"},
 			"concurrent_connections": []string{"21", "22", "23", "24", "25"},
 			"connected_time":         []string{"31", "32", "33", "34", "35"},
+			"cpu_time":               []string{"41", "42", "43", "44", "45"},
 		},
 	}
 	s.nLock.Unlock()
@@ -148,6 +149,11 @@ func TestUserStats(t *testing.T) {
 		s.Users["u3"].ConnectedTime:         float64(33),
 		s.Users["u4"].ConnectedTime:         float64(34),
 		s.Users["u5"].ConnectedTime:         float64(35),
+		s.Users["u1"].CPUTime:               float64(41),
+		s.Users["u2"].CPUTime:               float64(42),
+		s.Users["u3"].CPUTime:               float64(43),
+		s.Users["u4"].CPUTime:               float64(44),
+		s.Users["u5"].CPUTime:               float64(45),
 	}
 
 	err := checkResults()

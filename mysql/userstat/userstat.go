@@ -18,7 +18,7 @@ import (
 const (
 	innodbMetadataCheck = "SELECT @@GLOBAL.innodb_stats_on_metadata;"
 	usrStatisticsQuery  = `
-SELECT user, total_connections, concurrent_connections, connected_time
+SELECT user, total_connections, concurrent_connections, connected_time, cpu_time
   FROM INFORMATION_SCHEMA.USER_STATISTICS;`
 	defaultMaxConns = 5
 )
@@ -35,6 +35,7 @@ type MysqlStatPerUser struct {
 	TotalConnections      *metrics.Gauge
 	ConcurrentConnections *metrics.Gauge
 	ConnectedTime         *metrics.Gauge
+	CPUTime               *metrics.Gauge
 }
 
 // New initializes mysqlstat and returns it
@@ -84,7 +85,7 @@ func (s *MysqlStatUsers) checkUser(user string) {
 
 // GetUserStatistics collects user statistics: user, total connections, concurrent connections, connected time
 func (s *MysqlStatUsers) GetUserStatistics() {
-	fields := []string{"total_connections", "concurrent_connections", "connected_time"}
+	fields := []string{"total_connections", "concurrent_connections", "connected_time", "cpu_time"}
 
 	res, err := s.Db.QueryReturnColumnDict(usrStatisticsQuery)
 	if len(res) == 0 || err != nil {
@@ -108,6 +109,8 @@ func (s *MysqlStatUsers) GetUserStatistics() {
 				s.Users[user].ConcurrentConnections.Set(float64(field))
 			case queryField == "connected_time":
 				s.Users[user].ConnectedTime.Set(float64(field))
+			case queryField == "cpu_time":
+				s.Users[user].CPUTime.Set(float64(field))
 			}
 			s.nLock.Unlock()
 		}
@@ -126,6 +129,8 @@ func (s *MysqlStatUsers) FormatGraphite(w io.Writer) error {
 			strconv.FormatFloat(user.ConcurrentConnections.Get(), 'f', 5, 64))
 		fmt.Fprintln(w, username+".ConnectedTime "+
 			strconv.FormatFloat(user.ConnectedTime.Get(), 'f', 5, 64))
+		fmt.Fprintln(w, username+".CPUTime "+
+			strconv.FormatFloat(user.CPUTime.Get(), 'f', 5, 64))
 	}
 	return nil
 }
