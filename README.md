@@ -31,7 +31,12 @@ Please see subdirectories for more detailed documentation
 * metrics/metricscheck - Simple metrics libraries for golang.
 
 #### Development
+* We use godep for vendoring and dependency management.
+  1. godep restore # restore to last known good set
 * Please run gofmt and golint before submitting PRs
   1. go fmt ./...
   2. go test ./...
   3. $GOPATH/bin/golint ./...
+
+#### Todo
+* metriccheck uses some darkmagic and uses golang/x/tools APIs which tend to break API compat often. Need to fix it.
