@@ -6,9 +6,13 @@ analysis libraries and utilities with an emphasis on problem detection.
 
 #### Installation
   1. get go
-  2. go get -u -v github.com/square/inspect/...
+  2. go get -u -v github.com/tools/godep
+  3. git clone https://github.com/square/inspect.git
+  4. cd inspect
+  5. GOPATH=`$GOPATH/bin/godep path`:$GOPATH
+  6. go install ./...
   
-The above commands should install three binaries in your $GOPATH/bin directory.
+The above commands should install three binaries in your original $GOPATH/bin directory.
 
 1. inspect 
 2. inspect-mysql (work in progress)
