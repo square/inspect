@@ -187,6 +187,9 @@ func TestBasic(t *testing.T) {
 			"Uptime":           []string{"100"},
 			"Threads_running":  []string{"5"},
 		},
+		sslQuery: map[string][]string{
+			"@@have_ssl": []string{"YES"},
+		},
 	}
 	//expected results
 	expectedValues = map[interface{}]interface{}{

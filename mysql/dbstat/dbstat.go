@@ -838,6 +838,7 @@ func (s *MysqlStatDBs) GetSecurity() {
 	return
 }
 
+// GetSSL checks whether or not SSL is enabled
 func (s *MysqlStatDBs) GetSSL() {
 	res, err := s.Db.QueryReturnColumnDict(sslQuery)
 	if err != nil {
@@ -845,7 +846,11 @@ func (s *MysqlStatDBs) GetSSL() {
 		s.Wg.Done()
 		return
 	}
-	if res["@@have_ssl"][0] == "YES" {
+
+	if row, ok := res["@@have_ssl"]; !ok || len(row) == 0 {
+		s.Db.Log("Mysql does not have the @@have_ssl field!")
+		s.Metrics.HasSSL.Set(0)
+	} else if row[0] == "YES" {
 		s.Metrics.HasSSL.Set(1)
 	} else {
 		s.Metrics.HasSSL.Set(0)
