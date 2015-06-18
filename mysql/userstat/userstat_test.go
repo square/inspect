@@ -121,11 +121,10 @@ func TestUserStats(t *testing.T) {
 		// Test giving information for tables without the schema they
 		// belong in being previously defined
 		usrStatisticsQuery: map[string][]string{
-			"user":                   []string{"u1", "u2", "u3", "u4", "u5"},
-			"total_connections":      []string{"11", "12", "13", "14", "15"},
-			"concurrent_connections": []string{"21", "22", "23", "24", "25"},
-			"connected_time":         []string{"31", "32", "33", "34", "35"},
-			"cpu_time":               []string{"41", "42", "43", "44", "45"},
+			"user":              []string{"u1", "u2", "u3", "u4", "u5"},
+			"total_connections": []string{"11", "12", "13", "14", "15"},
+			"connected_time":    []string{"21", "22", "23", "24", "25"},
+			"cpu_time":          []string{"31", "32", "33", "34", "35"},
 		},
 	}
 	s.nLock.Unlock()
@@ -134,26 +133,21 @@ func TestUserStats(t *testing.T) {
 
 	s.nLock.Lock()
 	expectedValues = map[interface{}]interface{}{
-		s.Users["u1"].TotalConnections:      float64(11),
-		s.Users["u2"].TotalConnections:      float64(12),
-		s.Users["u3"].TotalConnections:      float64(13),
-		s.Users["u4"].TotalConnections:      float64(14),
-		s.Users["u5"].TotalConnections:      float64(15),
-		s.Users["u1"].ConcurrentConnections: float64(21),
-		s.Users["u2"].ConcurrentConnections: float64(22),
-		s.Users["u3"].ConcurrentConnections: float64(23),
-		s.Users["u4"].ConcurrentConnections: float64(24),
-		s.Users["u5"].ConcurrentConnections: float64(25),
-		s.Users["u1"].ConnectedTime:         float64(31),
-		s.Users["u2"].ConnectedTime:         float64(32),
-		s.Users["u3"].ConnectedTime:         float64(33),
-		s.Users["u4"].ConnectedTime:         float64(34),
-		s.Users["u5"].ConnectedTime:         float64(35),
-		s.Users["u1"].CPUTime:               float64(41),
-		s.Users["u2"].CPUTime:               float64(42),
-		s.Users["u3"].CPUTime:               float64(43),
-		s.Users["u4"].CPUTime:               float64(44),
-		s.Users["u5"].CPUTime:               float64(45),
+		s.Users["u1"].TotalConnections: float64(11),
+		s.Users["u2"].TotalConnections: float64(12),
+		s.Users["u3"].TotalConnections: float64(13),
+		s.Users["u4"].TotalConnections: float64(14),
+		s.Users["u5"].TotalConnections: float64(15),
+		s.Users["u1"].ConnectedTime:    float64(21),
+		s.Users["u2"].ConnectedTime:    float64(22),
+		s.Users["u3"].ConnectedTime:    float64(23),
+		s.Users["u4"].ConnectedTime:    float64(24),
+		s.Users["u5"].ConnectedTime:    float64(25),
+		s.Users["u1"].CPUTime:          float64(31),
+		s.Users["u2"].CPUTime:          float64(32),
+		s.Users["u3"].CPUTime:          float64(33),
+		s.Users["u4"].CPUTime:          float64(34),
+		s.Users["u5"].CPUTime:          float64(35),
 	}
 
 	err := checkResults()
