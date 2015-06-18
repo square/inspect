@@ -1,0 +1,68 @@
+{
+	"ImportPath": "github.com/square/inspect",
+	"GoVersion": "go1.2.1",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/go.tools/go/exact",
+			"Comment": "null-969",
+			"Rev": "c1516b52ea3bbf6f3cbe62b08409e77b64b6bc55"
+		},
+		{
+			"ImportPath": "code.google.com/p/go.tools/go/gcimporter",
+			"Comment": "null-969",
+			"Rev": "c1516b52ea3bbf6f3cbe62b08409e77b64b6bc55"
+		},
+		{
+			"ImportPath": "code.google.com/p/go.tools/go/types",
+			"Comment": "null-969",
+			"Rev": "c1516b52ea3bbf6f3cbe62b08409e77b64b6bc55"
+		},
+		{
+			"ImportPath": "code.google.com/p/goconf/conf",
+			"Comment": "null-17",
+			"Rev": "a4db5c465ed1c5d7a1ca805593ac77c067920722"
+		},
+		{
+			"ImportPath": "github.com/codahale/tmpmysqld",
+			"Rev": "64dcbcba51d368e812d485980832e98124e471e9"
+		},
+		{
+			"ImportPath": "github.com/gizak/termui",
+			"Rev": "9d0302382ddeed86cbedb11049dcab10f8131d15"
+		},
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.2-97-g0cc29e9",
+			"Rev": "0cc29e9fe8e25c2c58cf47bcab566e029bbaa88b"
+		},
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Comment": "go1.0-cutoff-47-g93e9980",
+			"Rev": "93e9980741c9e593411b94e07d5bad8cfb4809db"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-runewidth",
+			"Comment": "travisish-33-g5890272",
+			"Rev": "5890272cd41c5103531cd7b79e428d99c9e97f76"
+		},
+		{
+			"ImportPath": "github.com/nsf/termbox-go",
+			"Rev": "5f0ef235e86927c0a9c1f22f9475cc9c58ce3537"
+		},
+		{
+			"ImportPath": "golang.org/x/tools/go/exact",
+			"Rev": "7d75e8b219c3efda2d08ae38acd6b42f8da4f5f9"
+		},
+		{
+			"ImportPath": "golang.org/x/tools/go/gcimporter",
+			"Rev": "7d75e8b219c3efda2d08ae38acd6b42f8da4f5f9"
+		},
+		{
+			"ImportPath": "golang.org/x/tools/go/types",
+			"Rev": "7d75e8b219c3efda2d08ae38acd6b42f8da4f5f9"
+		}
+	]
+}

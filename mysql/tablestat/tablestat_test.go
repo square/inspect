@@ -1,6 +1,6 @@
-//Copyright (c) 2014 Square, Inc
+//Copyright (c) 2015 Square, Inc
 //
-// Tests the metrics collecting functions for mysqlstat-tables.go.
+// Tests the metrics collecting functions for tablestat.go.
 // Tests do not connect to a database, dummy functions are
 // used instead and return hard coded input. Testing connections
 // to a database are done in mysqltools_test.go.
@@ -75,12 +75,12 @@ func (s *testMysqlDB) SetMaxConnections(maxConns int) {
 func initMysqlStatTable() *MysqlStatTables {
 	syscall.Dup2(int(logFile.Fd()), 2)
 	s := new(MysqlStatTables)
-	s.db = &testMysqlDB{
+	s.Db = &testMysqlDB{
 		Logger: log.New(os.Stderr, "TESTING LOG: ", log.Lshortfile),
 	}
 	s.nLock = &sync.Mutex{}
 
-	s.m = metrics.NewMetricContext("system")
+	s.M = metrics.NewMetricContext("system")
 	s.DBs = make(map[string]*DBStats)
 	return s
 }

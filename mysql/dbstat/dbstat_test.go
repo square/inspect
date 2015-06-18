@@ -76,12 +76,12 @@ func (s *testMysqlDB) SetMaxConnections(maxConns int) {
 	return
 }
 
-//initializes a test instance of MysqlStat.
+//initializes a test instance of MysqlStatDBs.
 // instance does not connect with a db
-func initMysqlStat() *MysqlStat {
+func initMysqlStatDBs() *MysqlStatDBs {
 	syscall.Dup2(int(logFile.Fd()), 2)
-	s := new(MysqlStat)
-	s.db = &testMysqlDB{
+	s := new(MysqlStatDBs)
+	s.Db = &testMysqlDB{
 		Logger: log.New(os.Stderr, "TESTING LOG: ", log.Lshortfile),
 	}
 	s.Metrics = MysqlStatMetricsNew(metrics.NewMetricContext("system"))
@@ -121,8 +121,8 @@ func checkResults() string {
 // More complex string manipulations are further tested in
 // later test functions.
 func TestBasic(t *testing.T) {
-	//intitialize MysqlStat
-	s := initMysqlStat()
+	//intitialize MysqlStatDBs
+	s := initMysqlStatDBs()
 
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
@@ -131,6 +131,7 @@ func TestBasic(t *testing.T) {
 			"Seconds_Behind_Master": []string{"8"},
 			"Relay_Master_Log_File": []string{"some-name-bin.010"},
 			"Exec_Master_Log_Pos":   []string{"79"},
+			"Relay_Log_Space":       []string{"123"},
 		},
 		//getOldest
 		oldestQuery: map[string][]string{
@@ -186,12 +187,16 @@ func TestBasic(t *testing.T) {
 			"Uptime":           []string{"100"},
 			"Threads_running":  []string{"5"},
 		},
+		sslQuery: map[string][]string{
+			"@@have_ssl": []string{"YES"},
+		},
 	}
 	//expected results
 	expectedValues = map[interface{}]interface{}{
 		s.Metrics.SlaveSecondsBehindMaster: float64(8),
 		s.Metrics.SlaveSeqFile:             float64(10),
 		s.Metrics.SlavePosition:            uint64(79),
+		s.Metrics.RelayLogSpace:            float64(123),
 		s.Metrics.Queries:                  uint64(8),
 		s.Metrics.Uptime:                   uint64(100),
 		s.Metrics.ThreadsRunning:           float64(5),
@@ -226,8 +231,8 @@ func TestBasic(t *testing.T) {
 
 //test parsing of version
 func TestVersion1(t *testing.T) {
-	//intialize MysqlStat
-	s := initMysqlStat()
+	//intialize MysqlStatDBs
+	s := initMysqlStatDBs()
 
 	//set desired test result
 	testquerycol = map[string]map[string][]string{
@@ -251,8 +256,8 @@ func TestVersion1(t *testing.T) {
 }
 
 func TestVersion2(t *testing.T) {
-	//intialize MysqlStat
-	s := initMysqlStat()
+	//intialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	//repeat for different test results
 	testquerycol = map[string]map[string][]string{
 		versionQuery: map[string][]string{
@@ -271,8 +276,8 @@ func TestVersion2(t *testing.T) {
 }
 
 func TestVersion3(t *testing.T) {
-	//intialize MysqlStat
-	s := initMysqlStat()
+	//intialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	testquerycol = map[string]map[string][]string{
 		versionQuery: map[string][]string{
 			"VERSION()": []string{"abcdefg-123-456-qwerty"},
@@ -291,8 +296,8 @@ func TestVersion3(t *testing.T) {
 
 //Test Parsing of sessions query
 func TestSessions(t *testing.T) {
-	//initialize MysqlStat
-	s := initMysqlStat()
+	//initialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	//set desired query output
 	testquerycol = map[string]map[string][]string{
 		sessionQuery1: map[string][]string{
@@ -332,8 +337,8 @@ func TestSessions(t *testing.T) {
 
 // Test basic parsing of slave info query
 func TestSlave1(t *testing.T) {
-	//intitialize MysqlStat
-	s := initMysqlStat()
+	//intitialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		//getSlaveStats()
@@ -341,6 +346,7 @@ func TestSlave1(t *testing.T) {
 			"Seconds_Behind_Master": []string{"80"},
 			"Relay_Master_Log_File": []string{"some-name-bin.01345"},
 			"Exec_Master_Log_Pos":   []string{"7"},
+			"Relay_Log_Space":       []string{"2"},
 		},
 		slaveBackupQuery: map[string][]string{
 			"count": []string{"0"},
@@ -351,6 +357,7 @@ func TestSlave1(t *testing.T) {
 		s.Metrics.SlaveSeqFile:             float64(1345),
 		s.Metrics.SlavePosition:            uint64(7),
 		s.Metrics.ReplicationRunning:       float64(1),
+		s.Metrics.RelayLogSpace:            float64(2),
 	}
 	s.Collect()
 	time.Sleep(time.Millisecond * 1000 * 1)
@@ -362,8 +369,8 @@ func TestSlave1(t *testing.T) {
 
 // Test when slave is down and backup isn't running
 func TestSlave2(t *testing.T) {
-	//intitialize MysqlStat
-	s := initMysqlStat()
+	//intitialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		//getSlaveStats()
@@ -371,6 +378,7 @@ func TestSlave2(t *testing.T) {
 			"Seconds_Behind_Master": []string{"NULL"},
 			"Relay_Master_Log_File": []string{"some.name.bin.01345"},
 			"Exec_Master_Log_Pos":   []string{"7"},
+			"Relay_Log_Space":       []string{"0"},
 		},
 		slaveBackupQuery: map[string][]string{
 			"count": []string{"0"},
@@ -381,6 +389,7 @@ func TestSlave2(t *testing.T) {
 		s.Metrics.SlaveSeqFile:             float64(1345),
 		s.Metrics.SlavePosition:            uint64(7),
 		s.Metrics.ReplicationRunning:       float64(-1),
+		s.Metrics.RelayLogSpace:            float64(0),
 	}
 	s.Collect()
 	time.Sleep(time.Millisecond * 1000 * 1)
@@ -392,8 +401,8 @@ func TestSlave2(t *testing.T) {
 
 // Test when slave is down and backup is running
 func TestSlave3(t *testing.T) {
-	//intitialize MysqlStat
-	s := initMysqlStat()
+	//intitialize MysqlStatDBs
+	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		//getSlaveStats()
@@ -401,6 +410,7 @@ func TestSlave3(t *testing.T) {
 			"Seconds_Behind_Master": []string{"NULL"},
 			"Relay_Master_Log_File": []string{"some.name.bin.01345"},
 			"Exec_Master_Log_Pos":   []string{"7"},
+			"Relay_Log_Space":       []string{"0"},
 		},
 		slaveBackupQuery: map[string][]string{
 			"count": []string{"1"},
@@ -411,6 +421,7 @@ func TestSlave3(t *testing.T) {
 		s.Metrics.SlaveSeqFile:             float64(1345),
 		s.Metrics.SlavePosition:            uint64(7),
 		s.Metrics.ReplicationRunning:       float64(1),
+		s.Metrics.RelayLogSpace:            float64(0),
 	}
 	s.Collect()
 	time.Sleep(time.Millisecond * 1000 * 1)

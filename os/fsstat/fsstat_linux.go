@@ -63,6 +63,9 @@ func (s *FSStat) Collect() {
 		if strings.Contains(f[2], "fuse") {
 			continue
 		}
+		if strings.Contains(f[3], "loop=") {
+			continue
+		}
 		o, ok := s.FS[f[1]]
 		if !ok {
 			o = NewPerFSStat(s.m, f[1])
@@ -121,6 +124,7 @@ type PerFSStat struct {
 // NewPerFSStat registers with metriccontext for the particular filesystem
 func NewPerFSStat(m *metrics.MetricContext, mp string) *PerFSStat {
 	fs := new(PerFSStat)
+	fs.m = m
 	fs.mp = mp
 	fs.Name = mp
 	misc.InitializeMetrics(fs, m, "fsstat."+mp, true)
