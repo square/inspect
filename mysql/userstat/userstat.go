@@ -84,7 +84,7 @@ func (s *MysqlStatUsers) checkUser(user string) {
 
 // GetUserStatistics collects user statistics: user, total connections, concurrent connections, connected time
 func (s *MysqlStatUsers) GetUserStatistics() {
-	fields := []string{"total_connections", "concurrent_connections", "connected_time", "cpu_time"}
+	fields := []string{"total_connections", "connected_time", "cpu_time"}
 
 	res, err := s.Db.QueryReturnColumnDict(usrStatisticsQuery)
 	if len(res) == 0 || err != nil {

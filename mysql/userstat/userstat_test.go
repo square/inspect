@@ -133,21 +133,21 @@ func TestUserStats(t *testing.T) {
 
 	s.nLock.Lock()
 	expectedValues = map[interface{}]interface{}{
-		s.Users["u1"].TotalConnections: float64(11),
-		s.Users["u2"].TotalConnections: float64(12),
-		s.Users["u3"].TotalConnections: float64(13),
-		s.Users["u4"].TotalConnections: float64(14),
-		s.Users["u5"].TotalConnections: float64(15),
-		s.Users["u1"].ConnectedTime:    float64(21),
-		s.Users["u2"].ConnectedTime:    float64(22),
-		s.Users["u3"].ConnectedTime:    float64(23),
-		s.Users["u4"].ConnectedTime:    float64(24),
-		s.Users["u5"].ConnectedTime:    float64(25),
-		s.Users["u1"].CPUTime:          float64(31),
-		s.Users["u2"].CPUTime:          float64(32),
-		s.Users["u3"].CPUTime:          float64(33),
-		s.Users["u4"].CPUTime:          float64(34),
-		s.Users["u5"].CPUTime:          float64(35),
+		s.Users["u1"].TotalConnections: uint64(11),
+		s.Users["u2"].TotalConnections: uint64(12),
+		s.Users["u3"].TotalConnections: uint64(13),
+		s.Users["u4"].TotalConnections: uint64(14),
+		s.Users["u5"].TotalConnections: uint64(15),
+		s.Users["u1"].ConnectedTime:    uint64(21),
+		s.Users["u2"].ConnectedTime:    uint64(22),
+		s.Users["u3"].ConnectedTime:    uint64(23),
+		s.Users["u4"].ConnectedTime:    uint64(24),
+		s.Users["u5"].ConnectedTime:    uint64(25),
+		s.Users["u1"].CPUTime:          uint64(31),
+		s.Users["u2"].CPUTime:          uint64(32),
+		s.Users["u3"].CPUTime:          uint64(33),
+		s.Users["u4"].CPUTime:          uint64(34),
+		s.Users["u5"].CPUTime:          uint64(35),
 	}
 
 	err := checkResults()
