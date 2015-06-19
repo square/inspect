@@ -170,6 +170,9 @@ type MysqlStatMetrics struct {
 	QueryResponseSec10000_   *metrics.Counter
 	QueryResponseSec100000_  *metrics.Counter
 	QueryResponseSec1000000_ *metrics.Counter
+
+	//GetSSL
+	HasSSL *metrics.Gauge
 }
 
 const (
@@ -217,6 +220,7 @@ const (
 SELECT COUNT(*) as count
   FROM information_schema.processlist 
  WHERE user LIKE '%backup%';`
+	sslQuery        = "SELECT @@have_ssl;"
 	defaultMaxConns = 5
 )
 
@@ -248,7 +252,7 @@ func MysqlStatMetricsNew(m *metrics.MetricContext) *MysqlStatMetrics {
 // sql.DB is safe for concurrent use by multiple goroutines
 // so launching each metric collector as its own goroutine is safe
 func (s *MysqlStatDBs) Collect() {
-	s.Wg.Add(14)
+	s.Wg.Add(15)
 	go s.GetVersion()
 	go s.GetSlaveStats()
 	go s.GetGlobalStatus()
@@ -263,6 +267,7 @@ func (s *MysqlStatDBs) Collect() {
 	go s.GetBinlogFiles()
 	go s.GetInnodbStats()
 	go s.GetSecurity()
+	go s.GetSSL()
 	s.Wg.Wait()
 }
 
@@ -829,6 +834,27 @@ func (s *MysqlStatDBs) GetSecurity() {
 		return
 	}
 	s.Metrics.UnsecureUsers.Set(float64(len(res["users"])))
+	s.Wg.Done()
+	return
+}
+
+// GetSSL checks whether or not SSL is enabled
+func (s *MysqlStatDBs) GetSSL() {
+	res, err := s.Db.QueryReturnColumnDict(sslQuery)
+	if err != nil {
+		s.Db.Log(err)
+		s.Wg.Done()
+		return
+	}
+
+	if row, ok := res["@@have_ssl"]; !ok || len(row) == 0 {
+		s.Db.Log("Mysql does not have the @@have_ssl field!")
+		s.Metrics.HasSSL.Set(0)
+	} else if row[0] == "YES" {
+		s.Metrics.HasSSL.Set(1)
+	} else {
+		s.Metrics.HasSSL.Set(0)
+	}
 	s.Wg.Done()
 	return
 }
