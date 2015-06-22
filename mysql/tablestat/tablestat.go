@@ -101,11 +101,12 @@ func newMysqlStatPerTable(m *metrics.MetricContext, dbname, tblname string) *Mys
 // sql.DB is thread safe so launching metrics collectors
 // in their own goroutines is safe
 func (s *MysqlStatTables) Collect() {
-	s.Wg.Add(3)
-	go s.GetDBSizes()
-	go s.GetTableSizes()
-	go s.GetTableStatistics()
-	s.Wg.Wait()
+	var queryFuncList = []func(){
+		s.GetDBSizes,
+		s.GetTableSizes,
+		s.GetTableStatistics,
+	}
+	util.CollectInParallel(queryFuncList)
 }
 
 //instantiate database metrics struct
@@ -142,14 +143,12 @@ func (s *MysqlStatTables) GetDBSizes() {
 	res, err := s.Db.QueryReturnColumnDict(innodbMetadataCheck)
 	if err != nil {
 		s.Db.Log(err)
-		s.Wg.Done()
 		return
 	}
 	for _, val := range res {
 		if v, _ := strconv.ParseInt(string(val[0]), 10, 64); v == 1 {
 			fmt.Println("Not capturing db/tbl sizes because @@GLOBAL.innodb_stats_on_metadata = 1")
 			s.Db.Log(errors.New("not capturing sizes: innodb_stats_on_metadata = 1"))
-			s.Wg.Done()
 			return
 		}
 		break
@@ -158,7 +157,6 @@ func (s *MysqlStatTables) GetDBSizes() {
 	res, err = s.Db.QueryMapFirstColumnToRow(dbSizesQuery)
 	if err != nil {
 		s.Db.Log(err)
-		s.Wg.Done()
 		return
 	}
 	for key, value := range res {
@@ -172,7 +170,6 @@ func (s *MysqlStatTables) GetDBSizes() {
 			s.nLock.Unlock()
 		}
 	}
-	s.Wg.Done()
 	return
 }
 
@@ -181,14 +178,12 @@ func (s *MysqlStatTables) GetTableSizes() {
 	res, err := s.Db.QueryReturnColumnDict(innodbMetadataCheck)
 	if err != nil {
 		s.Db.Log(err)
-		s.Wg.Done()
 		return
 	}
 	for _, val := range res {
 		if v, _ := strconv.ParseInt(string(val[0]), 10, 64); v == int64(1) {
 			fmt.Println("Not capturing db/tbl sizes because @@GLOBAL.innodb_stats_on_metadata = 1")
 			s.Db.Log(errors.New("not capturing sizes: innodb_stats_on_metadata = 1"))
-			s.Wg.Done()
 			return
 		}
 		break
@@ -196,7 +191,6 @@ func (s *MysqlStatTables) GetTableSizes() {
 	res, err = s.Db.QueryReturnColumnDict(tblSizesQuery)
 	if err != nil {
 		s.Db.Log(err)
-		s.Wg.Done()
 		return
 	}
 	tableCount := len(res["tbl"])
@@ -218,7 +212,6 @@ func (s *MysqlStatTables) GetTableSizes() {
 			s.nLock.Unlock()
 		}
 	}
-	s.Wg.Done()
 	return
 }
 
@@ -227,7 +220,6 @@ func (s *MysqlStatTables) GetTableStatistics() {
 	res, err := s.Db.QueryReturnColumnDict(tblStatisticsQuery)
 	if len(res) == 0 || err != nil {
 		s.Db.Log(err)
-		s.Wg.Done()
 		return
 	}
 	for i, tblname := range res["tbl"] {
@@ -266,7 +258,6 @@ func (s *MysqlStatTables) GetTableStatistics() {
 			s.nLock.Unlock()
 		}
 	}
-	s.Wg.Done()
 	return
 }
 
