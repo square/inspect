@@ -18,7 +18,7 @@ import (
 const (
 	innodbMetadataCheck = "SELECT @@GLOBAL.innodb_stats_on_metadata;"
 	usrStatisticsQuery  = `
-SELECT user, total_connections, concurrent_connections, connected_time, cpu_time
+SELECT user, total_connections, connected_time, cpu_time
   FROM INFORMATION_SCHEMA.USER_STATISTICS;`
 	defaultMaxConns = 5
 )
@@ -82,7 +82,7 @@ func (s *MysqlStatUsers) checkUser(user string) {
 	return
 }
 
-// GetUserStatistics collects user statistics: user, total connections, concurrent connections, connected time
+// GetUserStatistics collects user statistics: user, total connections, connected time, cpu time
 func (s *MysqlStatUsers) GetUserStatistics() {
 	fields := []string{"total_connections", "connected_time", "cpu_time"}
 
