@@ -67,9 +67,10 @@ func newMysqlStatPerUser(m *metrics.MetricContext, user string) *MysqlStatPerUse
 // sql.DB is thread safe so launching metrics collectors
 // in their own goroutines is safe
 func (s *MysqlStatUsers) Collect() {
-	s.Wg.Add(1)
-	go s.GetUserStatistics()
-	s.Wg.Wait()
+	var queryFuncList = []func(){
+		s.GetUserStatistics,
+	}
+	util.CollectInParallel(queryFuncList)
 }
 
 //check if database struct is instantiated, and instantiate if not
@@ -89,7 +90,6 @@ func (s *MysqlStatUsers) GetUserStatistics() {
 	res, err := s.Db.QueryReturnColumnDict(usrStatisticsQuery)
 	if len(res) == 0 || err != nil {
 		s.Db.Log(err)
-		s.Wg.Done()
 		return
 	}
 	for i, user := range res["user"] {
@@ -112,7 +112,6 @@ func (s *MysqlStatUsers) GetUserStatistics() {
 			s.nLock.Unlock()
 		}
 	}
-	s.Wg.Done()
 	return
 }
 
