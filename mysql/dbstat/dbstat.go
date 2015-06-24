@@ -22,7 +22,8 @@ import (
 // MysqlStatDBs represents collection of metrics and connection to database
 type MysqlStatDBs struct {
 	util.MysqlStat
-	Metrics *MysqlStatMetrics //collection of metrics
+	Metrics        *MysqlStatMetrics //collection of metrics
+	MasterHostname string
 }
 
 // MysqlStatMetrics represents metrics being collected about the server/database
@@ -295,6 +296,10 @@ func (s *MysqlStatDBs) GetSlaveStats() {
 	if err != nil {
 		s.Db.Log(err)
 		return
+	}
+
+	if len(res["Master_Host"]) > 0 {
+		s.MasterHostname = string(res["Master_Host"][0])
 	}
 
 	if (len(res["Seconds_Behind_Master"]) > 0) && (string(res["Seconds_Behind_Master"][0]) != "") {

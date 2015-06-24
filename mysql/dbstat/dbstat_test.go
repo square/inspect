@@ -132,6 +132,7 @@ func TestBasic(t *testing.T) {
 			"Relay_Master_Log_File": []string{"some-name-bin.010"},
 			"Exec_Master_Log_Pos":   []string{"79"},
 			"Relay_Log_Space":       []string{"123"},
+			"Master_Host":           []string{"abcdef"},
 		},
 		//getOldest
 		oldestQuery: map[string][]string{
@@ -226,6 +227,10 @@ func TestBasic(t *testing.T) {
 	err := checkResults()
 	if err != "" {
 		t.Error(err)
+	}
+
+	if s.MasterHostname != "abcdef" {
+		t.Error("MasterHost: expect abcdef, got " + s.MasterHostname)
 	}
 }
 
@@ -364,6 +369,10 @@ func TestSlave1(t *testing.T) {
 	err := checkResults()
 	if err != "" {
 		t.Error(err)
+	}
+
+	if s.MasterHostname != "" {
+		t.Error("MasterHost: Expect empty string, got " + s.MasterHostname)
 	}
 }
 
