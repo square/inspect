@@ -81,7 +81,9 @@ func (c *checker) CheckAll() ([]CheckResult, error) {
 			fmt.Fprintln(os.Stderr, err)
 			continue
 		}
-		tv, err := types.Eval(expr, c.pkg, c.sc)
+		fset := token.NewFileSet()
+		fset.AddFile("", fset.Base(), len(expr)).SetLinesForContent([]byte(expr))
+		tv, err := types.Eval(fset, c.pkg, 0, expr)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			fmt.Fprintln(os.Stderr, expr)
@@ -104,7 +106,9 @@ func (c *checker) CheckAll() ([]CheckResult, error) {
 		}
 		val, err := c.config.GetString(section, "val")
 		if err == nil {
-			tv, err := types.Eval(val, c.pkg, c.sc)
+			fset := token.NewFileSet()
+			fset.AddFile("", fset.Base(), len(val)).SetLinesForContent([]byte(val))
+			tv, err := types.Eval(fset, c.pkg, 0, val)
 			if err == nil {
 				if types.Identical(tv.Type, types.Typ[types.UntypedFloat]) || types.Identical(tv.Type, types.Typ[types.Float64]) {
 					x, _ := exact.Float64Val(tv.Value)
@@ -119,7 +123,9 @@ func (c *checker) CheckAll() ([]CheckResult, error) {
 			cr.Tags = "unknown"
 		}
 
-		tv, err = types.Eval(m, c.pkg, c.sc)
+		fset = token.NewFileSet()
+		fset.AddFile("", fset.Base(), len(m)).SetLinesForContent([]byte(m))
+		tv, err = types.Eval(fset, c.pkg, 0, m)
 		if err != nil {
 			cr.Message = m
 		} else {
@@ -153,19 +159,19 @@ func (c *checker) InsertMetricValuesFromJSON() error {
 		case float64:
 			name := strings.Replace(m.Name, ".", "_", -1) + "_value"
 			c.sc.Insert(types.NewConst(0, c.pkg, name,
-				types.New("float64"), exact.MakeFloat64(val)))
+				types.Typ[types.Float64], exact.MakeFloat64(val)))
 		case map[string]interface{}:
 			//TODO: make sure we don't panic in case something is not formatted
 			// like expected
 			if current, ok := val["current"]; ok {
 				name := strings.Replace(m.Name, ".", "_", -1) + "_current"
 				c.sc.Insert(types.NewConst(0, c.pkg, name,
-					types.New("float64"), exact.MakeFloat64(current.(float64))))
+					types.Typ[types.Float64], exact.MakeFloat64(current.(float64))))
 			}
 			if rate, ok := val["rate"]; ok {
 				name := strings.Replace(m.Name, ".", "_", -1) + "_rate"
 				c.sc.Insert(types.NewConst(0, c.pkg, name,
-					types.New("float64"), exact.MakeFloat64(rate.(float64))))
+					types.Typ[types.Float64], exact.MakeFloat64(rate.(float64))))
 			}
 		default:
 			//a value type came up that wasn't anticipated
@@ -179,21 +185,21 @@ func (c *checker) InsertMetricValuesFromContext(m *metrics.MetricContext) error 
 	for metricName, metric := range m.Gauges {
 		name := strings.Replace(metricName, ".", "_", -1) + "_value"
 		c.sc.Insert(types.NewConst(0, c.pkg, name,
-			types.New("float64"), exact.MakeFloat64(metric.Get())))
+			types.Typ[types.Float64], exact.MakeFloat64(metric.Get())))
 		sname := name + "_string"
 		c.sc.Insert(types.NewConst(0, c.pkg, sname,
-			types.New("string"), exact.MakeString(fmt.Sprintf("%0.2f", metric.Get()))))
+			types.Typ[types.String], exact.MakeString(fmt.Sprintf("%0.2f", metric.Get()))))
 	}
 	for metricName, metric := range m.Counters {
 		name := strings.Replace(metricName, ".", "_", -1) + "_current"
 		c.sc.Insert(types.NewConst(0, c.pkg, name,
-			types.New("float64"), exact.MakeUint64(metric.Get())))
+			types.Typ[types.Float64], exact.MakeUint64(metric.Get())))
 		sname := name + "_string"
 		c.sc.Insert(types.NewConst(0, c.pkg, sname,
-			types.New("string"), exact.MakeString(fmt.Sprintf("%d", metric.Get()))))
+			types.Typ[types.String], exact.MakeString(fmt.Sprintf("%d", metric.Get()))))
 		name = strings.Replace(metricName, ".", "_", -1) + "_rate"
 		c.sc.Insert(types.NewConst(0, c.pkg, name,
-			types.New("float64"), exact.MakeFloat64(metric.ComputeRate())))
+			types.Typ[types.Float64], exact.MakeFloat64(metric.ComputeRate())))
 	}
 	return nil
 }

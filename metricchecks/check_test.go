@@ -7,8 +7,8 @@ import (
 
 	"github.com/square/inspect/metrics"
 
-	_ "code.google.com/p/go.tools/go/gcimporter"
 	"golang.org/x/tools/go/exact"
+	_ "golang.org/x/tools/go/gcimporter"
 	"golang.org/x/tools/go/types"
 )
 
@@ -72,7 +72,7 @@ func TestNewScopeAndPackage2(t *testing.T) {
 	c := initTestChecker()
 	c.NewScopeAndPackage()
 	c.sc.Insert(types.NewConst(0, c.pkg, "testfloat1",
-		types.New("float64"), exact.MakeFloat64(1)))
+		types.Typ[types.Float64], exact.MakeFloat64(1)))
 	c.NewScopeAndPackage()
 	for _, name := range c.sc.Names() {
 		if name == "testfloat1" {
@@ -80,7 +80,7 @@ func TestNewScopeAndPackage2(t *testing.T) {
 		}
 	}
 	o := c.sc.Insert(types.NewConst(0, c.pkg, "testfloat1",
-		types.New("float64"), exact.MakeFloat64(2)))
+		types.Typ[types.Float64], exact.MakeFloat64(2)))
 	if o != nil {
 		t.Errorf("did not reset scope")
 	}
