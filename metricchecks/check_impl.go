@@ -193,7 +193,7 @@ func (c *checker) InsertMetricValuesFromContext(m *metrics.MetricContext) error 
 	for metricName, metric := range m.Counters {
 		name := strings.Replace(metricName, ".", "_", -1) + "_current"
 		c.sc.Insert(types.NewConst(0, c.pkg, name,
-			types.Typ[types.Float64], exact.MakeUint64(metric.Get())))
+			types.Typ[types.Uint64], exact.MakeUint64(metric.Get())))
 		sname := name + "_string"
 		c.sc.Insert(types.NewConst(0, c.pkg, sname,
 			types.Typ[types.String], exact.MakeString(fmt.Sprintf("%d", metric.Get()))))
