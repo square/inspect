@@ -1,25 +1,10 @@
 {
 	"ImportPath": "github.com/square/inspect",
-	"GoVersion": "go1.2.1",
+	"GoVersion": "go1.4.2",
 	"Packages": [
 		"./..."
 	],
 	"Deps": [
-		{
-			"ImportPath": "code.google.com/p/go.tools/go/exact",
-			"Comment": "null-969",
-			"Rev": "c1516b52ea3bbf6f3cbe62b08409e77b64b6bc55"
-		},
-		{
-			"ImportPath": "code.google.com/p/go.tools/go/gcimporter",
-			"Comment": "null-969",
-			"Rev": "c1516b52ea3bbf6f3cbe62b08409e77b64b6bc55"
-		},
-		{
-			"ImportPath": "code.google.com/p/go.tools/go/types",
-			"Comment": "null-969",
-			"Rev": "c1516b52ea3bbf6f3cbe62b08409e77b64b6bc55"
-		},
 		{
 			"ImportPath": "code.google.com/p/goconf/conf",
 			"Comment": "null-17",
@@ -40,8 +25,8 @@
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
-			"Comment": "go1.0-cutoff-47-g93e9980",
-			"Rev": "93e9980741c9e593411b94e07d5bad8cfb4809db"
+			"Comment": "go1.0-cutoff-51-ga8d8d01",
+			"Rev": "a8d8d01c4f91602f876bf5aa210274e8203a6b45"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-runewidth",
@@ -50,19 +35,19 @@
 		},
 		{
 			"ImportPath": "github.com/nsf/termbox-go",
-			"Rev": "5f0ef235e86927c0a9c1f22f9475cc9c58ce3537"
+			"Rev": "598cdb8b3c49430c1c91604805461732064bde1d"
 		},
 		{
 			"ImportPath": "golang.org/x/tools/go/exact",
-			"Rev": "7d75e8b219c3efda2d08ae38acd6b42f8da4f5f9"
+			"Rev": "7e09e07243f7aafa5fbcc4da39f79083d1797e7b"
 		},
 		{
 			"ImportPath": "golang.org/x/tools/go/gcimporter",
-			"Rev": "7d75e8b219c3efda2d08ae38acd6b42f8da4f5f9"
+			"Rev": "7e09e07243f7aafa5fbcc4da39f79083d1797e7b"
 		},
 		{
 			"ImportPath": "golang.org/x/tools/go/types",
-			"Rev": "7d75e8b219c3efda2d08ae38acd6b42f8da4f5f9"
+			"Rev": "7e09e07243f7aafa5fbcc4da39f79083d1797e7b"
 		}
 	]
 }
