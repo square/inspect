@@ -1,3 +1,5 @@
+Metrics is a simple library for collecting metrics for golang applications. 
+
 ###### Example API use
 
 ```go
@@ -56,6 +58,6 @@ go func() {
 resp, err := http.Get("http://localhost:12345/metrics.json")
 ```
 
-##Dependencies
+##### Dependencies
 Package dependency is managed by godep (https://github.com/tools/godep). Follow the docs there when adding/removing/updating
 package dependencies.
