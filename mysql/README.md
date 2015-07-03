@@ -1,73 +1,21 @@
-#inspect-mysql
+#### mysql
+**mysql** is a collection of libraries for gathering various metrics for MySQL servers
 
+**mysql** libraries can gather the following metrics:
+ * Version information
+ * Slave Stats
+ * Global Stats
+ * Binlog Stats
+ * Stacked Query info - Information about queries that are repeated and getting stacked.
+ * Session Info
+ * Innodb stats
+ * Long Run Query info - Information about queries that are running for a long period of time.
+ * Query Response Times
 
-inspect-mysql is a collection of libraries for gathering metrics of mysql databases.
+#### Installation
+1. `go get -v -u github.com/square/inspect/mysql`
 
-inspect command line is a utility that gives a brief overview on the databases: version, uptime, queries made, and database sizes.
-
-inspect gathers the following metrics:
-- Version number
-- Slave Stats
-- Global Stats
-- Binlog Stats
-- Stacked Query info
-- Session Info
-- Innodb stats
-- Long Run Query info
-- Query Response Times
-
-##Installation
-
-1. Get Go
-2. `go get -v -u github.com/square/inspect/mysql`
-
-##Dependencies
-Package dependency is managed by godep (https://github.com/tools/godep). Follow the docs there when adding/removing/updating
-package dependencies.
-
-##Usage
-
-###Command Line Utility
-
-`./bin/inspect-mysql`
-Will run the metrics collector once.
-
-Adding the `-loop` flag will start the collector to get metrics on a cycle.
-Specifying `-step <x>` will collect metrics every x seconds.
-
-```
---------------------------
-Version: 5.1234
-Queries made: 123456
-Uptime: 543210
-Database sizes:
-    database_name: 0.54 GB
-    other_database_name: 12.31 GB
-...
-```
-
-`./bin/inspect-mysql -group <group_name>` will collect metrics for the specified group.
-See below for the groupings of metrics.
-
-###Server
-
-_inspect-mysql_ can be run in server mode to run continuously and expose all metrics via HTTP JSON api
-
-./bin/inspect-mysql -server -address :12345
-
-```json
-[
-{"type": "counter", "name": "mysqlstat.Queries", "value": 9342251, "rate": 31.003152},
-{"type": "counter", "name": "mysqltablestat.database_name.table_name.RowsRead", "value": 0, "rate": 0.000000},
-{"type": "counter", "name": "mysqltablestat.database_name.table_name.RowsChanged", "value": 0, "rate": 0.000000},
-{"type": "counter", "name": "mysqltablestat.database_name.other_table_name.RowsChanged", "value": 0, "rate": 0.000000},
-{"type": "counter", "name": "mysqltablestat.database_name.table_name.RowsChangedXIndexes", "value": 0, "rate": 0.000000},
-... truncated
-{"type": "counter", "name": "mysqlstat.SortMergePasses", "value": 0, "rate": 0.000000}]
-```
-
-###Example API Use
-
+#### Usage
 
 ```go
 // Import packages
@@ -107,11 +55,14 @@ sqltablestats.GetDBSizes()
 sqltablestats.GetTableSizes()
 sqltablestats.GetTableStatistics()
 ```
+All metrics collected are exported to metriccontext. 
 
-All metrics collected are exported, so any metric may be accessed using Get():
 ```
 // Print the number of queries accessed
 fmt.Println(sqlstats.Metrics.Queries.Get())
+
+// Print the number of select queries per second
+fmt.Println(sqlstats.ComSelect.ComputeRate())
 
 // Print the size of table t1 in databse db1
 fmt.Println(sqltablestats.DBs["db1"].Tables["t1"].Metrics.SizeBytes.Get())
@@ -267,9 +218,9 @@ fmt.Println(sqltablestats.DBs["db1"].Tables["t1"].Metrics.SizeBytes.Get())
 ##Testing 
 
 Packages are tested using Go's testing package.
+
 To test:
-1. cd to the directory containing the .go and _test.go files
-2. Run `go test`. You can also run with the `-v` option for a verbose output. For these tests, many logs are expected so stderr is redirected to a file `test.log` 
+  * `go test -v ./...` For these tests, logging is redirected to a file `test.log` 
 
 Tests for each metric may be added to `mysqlstat_test.go` and `mysqlstat-tables_test.go`. These tests do not connect to a database. Instead, the desired test input is hard coded into each test. Testing for the parser for the Innodb metrics are located in `mysqltools_test.go`. 
 
