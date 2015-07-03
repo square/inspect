@@ -11,8 +11,7 @@
 - Query Response Times
 
 #### Installation
-1. Get Go
-2. `go get -v -u github.com/square/inspect/postgres`
+1. `go get -v -u github.com/square/inspect/postgres`
 
 #### Example API Use
 
