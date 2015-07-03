@@ -21,7 +21,7 @@ Database sizes:
 
 `./bin/inspect-mysql -group <group_name>` will collect metrics for the specified group. See below for the groupings of metrics.
 
-###Server
+#### Server
 
 _inspect-mysql_ can be run in server mode to run continuously and expose all metrics via HTTP JSON api
 
