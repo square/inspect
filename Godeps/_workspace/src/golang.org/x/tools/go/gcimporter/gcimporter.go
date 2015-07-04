@@ -20,8 +20,8 @@ import (
 	"strings"
 	"text/scanner"
 
-	"golang.org/x/tools/go/exact"
-	"golang.org/x/tools/go/types"
+	"github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/exact"
+	"github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/types"
 )
 
 // debugging/development support

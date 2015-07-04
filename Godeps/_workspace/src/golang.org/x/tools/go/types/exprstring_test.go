@@ -8,7 +8,7 @@ import (
 	"go/parser"
 	"testing"
 
-	. "golang.org/x/tools/go/types"
+	. "github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/types"
 )
 
 var testExprs = []testEntry{

@@ -22,11 +22,11 @@ import (
 	"reflect"
 	"strings"
 
-	"code.google.com/p/goconf/conf"
+	"github.com/square/inspect/Godeps/_workspace/src/code.google.com/p/goconf/conf"
+	"github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/exact"
+	_ "github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/gcimporter"
+	"github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/types"
 	"github.com/square/inspect/metrics"
-	"golang.org/x/tools/go/exact"
-	_ "golang.org/x/tools/go/gcimporter"
-	"golang.org/x/tools/go/types"
 )
 
 type checker struct {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/lib/pq/oid"
+	"github.com/square/inspect/Godeps/_workspace/src/github.com/lib/pq/oid"
 )
 
 type readBuf []byte

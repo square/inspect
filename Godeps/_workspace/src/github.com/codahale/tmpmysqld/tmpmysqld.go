@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"time"
 
+	_ "github.com/square/inspect/Godeps/_workspace/src/github.com/go-sql-driver/mysql" // load MySQL driver
 	"io/ioutil"
 	"os"
 	"syscall"
-	_ "github.com/go-sql-driver/mysql" // load MySQL driver
 )
 
 // IsMySQLInstalled returns true if the various required components of MySQL are
