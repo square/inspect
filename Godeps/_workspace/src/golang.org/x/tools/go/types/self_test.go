@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	_ "golang.org/x/tools/go/gcimporter"
-	. "golang.org/x/tools/go/types"
+	_ "github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/gcimporter"
+	. "github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/types"
 )
 
 var benchmark = flag.Bool("b", false, "run benchmarks")

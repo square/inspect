@@ -8,7 +8,7 @@
 
 package termui
 
-import "github.com/nsf/termbox-go"
+import "github.com/square/inspect/Godeps/_workspace/src/github.com/nsf/termbox-go"
 
 /***********************************termbox-go**************************************/
 

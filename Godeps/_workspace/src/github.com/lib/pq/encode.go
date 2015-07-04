@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lib/pq/oid"
+	"github.com/square/inspect/Godeps/_workspace/src/github.com/lib/pq/oid"
 )
 
 func encode(parameterStatus *parameterStatus, x interface{}, pgtypOid oid.Oid) []byte {

@@ -28,7 +28,7 @@ import (
 	"go/ast"
 	"go/token"
 
-	"golang.org/x/tools/go/exact"
+	"github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/exact"
 )
 
 // Check type-checks a package and returns the resulting complete package

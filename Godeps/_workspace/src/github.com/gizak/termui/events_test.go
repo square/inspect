@@ -12,7 +12,7 @@ import (
 	"errors"
 	"testing"
 
-	termbox "github.com/nsf/termbox-go"
+	termbox "github.com/square/inspect/Godeps/_workspace/src/github.com/nsf/termbox-go"
 	"github.com/stretchr/testify/assert"
 )
 
