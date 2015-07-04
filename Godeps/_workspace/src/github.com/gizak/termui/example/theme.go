@@ -6,7 +6,7 @@
 
 package main
 
-import ui "github.com/gizak/termui"
+import ui "github.com/square/inspect/Godeps/_workspace/src/github.com/gizak/termui"
 import "math"
 
 import "time"

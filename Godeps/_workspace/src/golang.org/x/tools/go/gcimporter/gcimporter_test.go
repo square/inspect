@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/tools/go/types"
+	"github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/types"
 )
 
 // skipSpecialPlatforms causes the test to be skipped for platforms where
