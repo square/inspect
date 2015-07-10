@@ -4,14 +4,18 @@ import (
 	"sort"
 )
 
+// MysqlQrtBucket : https://www.percona.com/doc/percona-server/5.6/diagnostics/response_time_distribution.html
+// Represents a row from information_schema.Query_Reponse_Time
 type MysqlQrtBucket struct {
 	time  string
 	count int64
 	total float64
 }
 
+// MysqlQrtHistogram represents a histogram containing MySQLQRTBuckets. Where each bucket is a bin.
 type MysqlQrtHistogram []MysqlQrtBucket
 
+// NewMysqlQrtBucket Public way to return a QRT bucket to be appended to a Histogram
 func NewMysqlQrtBucket(time string, count int64, total float64) MysqlQrtBucket {
 	return MysqlQrtBucket{time, count, total}
 }
@@ -37,8 +41,8 @@ func (h MysqlQrtHistogram) Count() int64 {
 
 // Percentile for QRTHistogram
 func (h MysqlQrtHistogram) Percentile(p float32) float64 {
-	var p_ix float64
-	var cur_pctl int64
+	var pIx float64
+	var curPctl int64
 	var total int64
 	var pctl float64
 
@@ -46,16 +50,16 @@ func (h MysqlQrtHistogram) Percentile(p float32) float64 {
 	total = h.Count()
 
 	// Multiply the total number of values in the data set by the percentile, which will give you the index.
-	p_ix = (float64(total) * float64(p)) * .01
+	pIx = float64(total) * (float64(p) * .01)
 
 	// Order all of the values in the data set in ascending order (least to greatest).
 	sort.Sort(MysqlQrtHistogram(h))
 
-	// Find the tgt percentile
+	// Find the tgt percentile, make it an average because using buckets of all same value entries
 	for i, v := range h {
-		cur_pctl += v.count
-		if float64(cur_pctl) >= p_ix {
-			pctl = h[i].total / float64(h[i].count) * 1000 // Convert to ms
+		curPctl += v.count
+		if float64(curPctl) >= pIx {
+			pctl = h[i].total / float64(h[i].count)
 			break
 		}
 	}

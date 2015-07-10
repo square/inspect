@@ -209,7 +209,6 @@ func TestBasic(t *testing.T) {
 		s.Metrics.Version:                  float64(1.234),
 		s.Metrics.ActiveLongRunQueries:     float64(7),
 		s.Metrics.BinlogSize:               float64(1111),
-		s.Metrics.QueryResponseSec_0001:    uint64(300),
 		s.Metrics.OldestQueryS:             float64(12345),
 		s.Metrics.AbortedConnects:          uint64(51),
 	}

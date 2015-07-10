@@ -491,7 +491,7 @@ func (s *MysqlStatDBs) GetQueryResponseTime() {
 	}
 
 	for _, x := range p {
-		pctls[x].Set(h.Percentile(x))
+		pctls[x].Set(h.Percentile(x) * 1000) // QRT Is in s and we want to display in ms.
 	}
 
 	return
