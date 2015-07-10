@@ -6,12 +6,8 @@ analysis libraries and utilities with an emphasis on problem detection.
 
 #### Installation
   1. get go
-  2. go get -u -v github.com/tools/godep
-  3. git clone https://github.com/square/inspect.git
-  4. cd inspect
-  5. ```GOPATH=`$GOPATH/bin/godep path`:$GOPATH```
-  6. go install ./...
-  
+  2. go get -u -v github.com/square/inspect/...
+
 The above commands should install three binaries in your original $GOPATH/bin directory.
 
 1. inspect 
@@ -31,9 +27,11 @@ Please see subdirectories for more detailed documentation
 * metrics/metricscheck - Simple metrics libraries for golang.
 
 #### Development
-* We use godep for vendoring and dependency management.
-  1. godep restore # restore to last known good set
-* Please run gofmt and golint before submitting PRs
+* We use godep for vendoring and dependency management. We rewrite import
+  paths. If you are adding a new dependency or updating one, please run
+  1. godep save -r
+
+* Please format, test and lint before submitting PRs
   1. go fmt ./...
   2. go test ./...
   3. $GOPATH/bin/golint ./...

@@ -1,36 +1,9 @@
-#inspect-mysql
+#### inspect-mysql
 
+**inspect-mysql** is a command line utility that gives a brief overview of: version, uptime, queries made, and database sizes.
 
-inspect-mysql is a collection of libraries for gathering metrics of mysql databases.
-
-inspect command line is a utility that gives a brief overview on the databases: version, uptime, queries made, and database sizes.
-
-inspect gathers the following metrics:
-- Version number
-- Slave Stats
-- Global Stats
-- Binlog Stats
-- Stacked Query info
-- Session Info
-- Innodb stats
-- Long Run Query info
-- Query Response Times
-
-##Installation
-
-1. Get Go
-2. `go get -v -u github.com/square/inspect/mysql`
-
-##Dependencies
-Package dependency is managed by godep (https://github.com/tools/godep). Follow the docs there when adding/removing/updating
-package dependencies.
-
-##Usage
-
-###Command Line Utility
-
-`./bin/inspect-mysql`
-Will run the metrics collector once.
+#### Usage
+`./bin/inspect-mysql` Will run the metrics collector once.
 
 Adding the `-loop` flag will start the collector to get metrics on a cycle.
 Specifying `-step <x>` will collect metrics every x seconds.
@@ -46,10 +19,9 @@ Database sizes:
 ...
 ```
 
-`./bin/inspect-mysql -group <group_name>` will collect metrics for the specified group.
-See below for the groupings of metrics.
+`./bin/inspect-mysql -group <group_name>` will collect metrics for the specified group. See below for the groupings of metrics.
 
-###Server
+#### Server
 
 _inspect-mysql_ can be run in server mode to run continuously and expose all metrics via HTTP JSON api
 
@@ -65,58 +37,6 @@ _inspect-mysql_ can be run in server mode to run continuously and expose all met
 ... truncated
 {"type": "counter", "name": "mysqlstat.SortMergePasses", "value": 0, "rate": 0.000000}]
 ```
-
-###Example API Use
-
-
-```go
-// Import packages
-import "github.com/square/inspect/mysql"
-import "github.com/square/inspect/metrics"
-
-// Initialize a metric context
-m := metrics.NewMetricContext("mysql")
-
-// Collect mysql metrics every m.Step seconds
-// Username and password may be left as "" if a config file is specified
-sqlstats := mysqlstat.New(m, <username>, <password>, <config file name>)
-
-// Collects mysql metrics for specific databases and tables
-// Username and password may be left as "" if a config file is specified
-sqltablestats := mysqlstattable.New(m, <username>, <password>, <config file name>)
-
-// Collect all metrics
-sqlstats.Collect()
-
-// Collect a group of metrics:
-sqlstat.GetVersion()
-sqlstat.GetSlaveStats()
-sqlstat.GetGlobalStatus()
-sqlstat.GetBinlogStats()
-sqlstat.GetStackedQueries()
-sqlstat.GetSessions()
-sqlstat.GetNumLongRunQueries()
-sqlstat.GetQueryResponseTime()
-sqlstat.GetBackups()
-sqlstat.GetOldestQuery()
-sqlstat.GetOldestTrx()
-sqlstat.GetBinlogFiles()
-sqlstat.GetInnodbBufferpoolMutexWaits()
-sqlstat.GetSecurity()
-sqltablestats.GetDBSizes()
-sqltablestats.GetTableSizes()
-sqltablestats.GetTableStatistics()
-```
-
-All metrics collected are exported, so any metric may be accessed using Get():
-```
-// Print the number of queries accessed
-fmt.Println(sqlstats.Metrics.Queries.Get())
-
-// Print the size of table t1 in databse db1
-fmt.Println(sqltablestats.DBs["db1"].Tables["t1"].Metrics.SizeBytes.Get())
-```
-
 #### Grouping of metrics
 
 ```
@@ -263,13 +183,3 @@ fmt.Println(sqltablestats.DBs["db1"].Tables["t1"].Metrics.SizeBytes.Get())
 	QueryResponseSec100000_  *metrics.Counter
 	QueryResponseSec1000000_ *metrics.Counter
 ```
-
-##Testing 
-
-Packages are tested using Go's testing package.
-To test:
-1. cd to the directory containing the .go and _test.go files
-2. Run `go test`. You can also run with the `-v` option for a verbose output. For these tests, many logs are expected so stderr is redirected to a file `test.log` 
-
-Tests for each metric may be added to `mysqlstat_test.go` and `mysqlstat-tables_test.go`. These tests do not connect to a database. Instead, the desired test input is hard coded into each test. Testing for the parser for the Innodb metrics are located in `mysqltools_test.go`. 
-

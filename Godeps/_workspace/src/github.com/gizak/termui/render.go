@@ -4,7 +4,7 @@
 
 package termui
 
-import tm "github.com/nsf/termbox-go"
+import tm "github.com/square/inspect/Godeps/_workspace/src/github.com/nsf/termbox-go"
 
 // Bufferer should be implemented by all renderable components.
 type Bufferer interface {

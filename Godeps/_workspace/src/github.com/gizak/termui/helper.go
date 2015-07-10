@@ -4,8 +4,8 @@
 
 package termui
 
-import tm "github.com/nsf/termbox-go"
-import rw "github.com/mattn/go-runewidth"
+import tm "github.com/square/inspect/Godeps/_workspace/src/github.com/nsf/termbox-go"
+import rw "github.com/square/inspect/Godeps/_workspace/src/github.com/mattn/go-runewidth"
 
 /* ---------------Port from termbox-go --------------------- */
 

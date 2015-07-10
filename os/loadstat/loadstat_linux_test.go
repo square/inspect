@@ -16,7 +16,7 @@ func TestLoadstat(t *testing.T) {
 	lstat := New(m, time.Millisecond*50)
 	time.Sleep(time.Millisecond * 1000)
 	root = "testdata/t1/"
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 200)
 	var expected float64 = 0.13
 	actual := lstat.OneMinute.Get()
 	if actual != expected {

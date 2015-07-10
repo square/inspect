@@ -2,7 +2,7 @@
 
 package termbox
 
-import "github.com/mattn/go-runewidth"
+import "github.com/square/inspect/Godeps/_workspace/src/github.com/mattn/go-runewidth"
 import "fmt"
 import "os"
 import "os/signal"

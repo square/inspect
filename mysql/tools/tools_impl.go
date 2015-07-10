@@ -15,12 +15,12 @@ import (
 	"strconv"
 	"strings"
 
-	"code.google.com/p/goconf/conf" // used for parsing config files
+	"github.com/square/inspect/Godeps/_workspace/src/code.google.com/p/goconf/conf" // used for parsing config files
 )
 
 // sql packages and driver
 import "database/sql"
-import _ "github.com/go-sql-driver/mysql" // mysql driver
+import _ "github.com/square/inspect/Godeps/_workspace/src/github.com/go-sql-driver/mysql" // mysql driver
 
 type mysqlDB struct {
 	db        *sql.DB
