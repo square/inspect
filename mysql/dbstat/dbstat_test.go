@@ -138,13 +138,6 @@ func TestBasic(t *testing.T) {
 		oldestQuery: map[string][]string{
 			"time": []string{"12345"},
 		},
-		//getQueryResponseTime
-		responseTimeQuery: map[string][]string{
-			"time": []string{"0.000001", "00.00001", "000.0001",
-				"0000.001", "00000.01", "00000.1", "1.00000", "10.0000",
-				"100.000", "1000.00", "10000.0"},
-			"count": []string{"1", "2", "300", "4", "5", "6", "7", "8", "9", "10", "11"},
-		},
 		// getBinlogFiles
 		binlogQuery: map[string][]string{
 			"Log_name":  []string{"binlog.00001", "binlog.00002", "binlog.00003", "binlog.00004"},
@@ -216,7 +209,6 @@ func TestBasic(t *testing.T) {
 		s.Metrics.Version:                  float64(1.234),
 		s.Metrics.ActiveLongRunQueries:     float64(7),
 		s.Metrics.BinlogSize:               float64(1111),
-		s.Metrics.QueryResponseSec_0001:    uint64(300),
 		s.Metrics.OldestQueryS:             float64(12345),
 		s.Metrics.AbortedConnects:          uint64(51),
 	}

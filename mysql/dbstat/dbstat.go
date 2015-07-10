@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/square/inspect/metrics"
+	"github.com/square/inspect/mysql/qrt"
 	"github.com/square/inspect/mysql/tools"
 	"github.com/square/inspect/mysql/util"
 	"github.com/square/inspect/os/misc"
@@ -158,19 +159,11 @@ type MysqlStatMetrics struct {
 	UnsecureUsers *metrics.Gauge
 
 	//Query response time metrics
-	QueryResponseSec_000001  *metrics.Counter
-	QueryResponseSec_00001   *metrics.Counter
-	QueryResponseSec_0001    *metrics.Counter
-	QueryResponseSec_001     *metrics.Counter
-	QueryResponseSec_01      *metrics.Counter
-	QueryResponseSec_1       *metrics.Counter
-	QueryResponseSec1_       *metrics.Counter
-	QueryResponseSec10_      *metrics.Counter
-	QueryResponseSec100_     *metrics.Counter
-	QueryResponseSec1000_    *metrics.Counter
-	QueryResponseSec10000_   *metrics.Counter
-	QueryResponseSec100000_  *metrics.Counter
-	QueryResponseSec1000000_ *metrics.Counter
+	QueryResponsePctl50 *metrics.Gauge
+	QueryResponsePctl75 *metrics.Gauge
+	QueryResponsePctl90 *metrics.Gauge
+	QueryResponsePctl95 *metrics.Gauge
+	QueryResponsePctl99 *metrics.Gauge
 
 	//GetSSL
 	HasSSL *metrics.Gauge
@@ -183,9 +176,9 @@ const (
   WHERE command NOT IN ('Sleep','Connect','Binlog Dump')
   ORDER BY time DESC LIMIT 1;`
 	oldestTrx = `
-  SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MIN(trx_started)) AS time 
+  SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MIN(trx_started)) AS time
     FROM information_schema.innodb_trx;`
-	responseTimeQuery         = "SELECT time, count FROM INFORMATION_SCHEMA.QUERY_RESPONSE_TIME;"
+	responseTimeQuery         = "SELECT time, count, total FROM INFORMATION_SCHEMA.QUERY_RESPONSE_TIME WHERE TIME!='TOO LONG';"
 	binlogQuery               = "SHOW MASTER LOGS;"
 	globalStatsQuery          = "SHOW GLOBAL STATUS;"
 	maxPreparedStmtCountQuery = "SHOW GLOBAL VARIABLES LIKE 'max_prepared_stmt_count';"
@@ -196,11 +189,11 @@ const (
 	versionQuery     = "SELECT VERSION();"
 	binlogStatsQuery = "SHOW MASTER STATUS;"
 	stackedQuery     = `
-  SELECT COUNT(*) AS identical_queries_stacked, 
-         MAX(time) AS max_age, 
-         GROUP_CONCAT(id SEPARATOR ' ') AS thread_ids, 
-         info as query 
-    FROM information_schema.processlist 
+  SELECT COUNT(*) AS identical_queries_stacked,
+         MAX(time) AS max_age,
+         GROUP_CONCAT(id SEPARATOR ' ') AS thread_ids,
+         info as query
+    FROM information_schema.processlist
    WHERE user != 'system user'
      AND user NOT LIKE 'repl%'
      AND info IS NOT NULL
@@ -219,7 +212,7 @@ const (
 	securityQuery    = "SELECT user FROM mysql.user WHERE password = '' AND ssl_type = '';"
 	slaveBackupQuery = `
 SELECT COUNT(*) as count
-  FROM information_schema.processlist 
+  FROM information_schema.processlist
  WHERE user LIKE '%backup%';`
 	sslQuery        = "SELECT @@have_ssl;"
 	defaultMaxConns = 5
@@ -462,20 +455,16 @@ func (s *MysqlStatDBs) GetOldestTrx() {
 
 // GetQueryResponseTime collects various query response times
 func (s *MysqlStatDBs) GetQueryResponseTime() {
-	timers := map[string]*metrics.Counter{
-		".000001":  s.Metrics.QueryResponseSec_000001,
-		".00001":   s.Metrics.QueryResponseSec_00001,
-		".0001":    s.Metrics.QueryResponseSec_0001,
-		".001":     s.Metrics.QueryResponseSec_001,
-		".01":      s.Metrics.QueryResponseSec_01,
-		".1":       s.Metrics.QueryResponseSec_1,
-		"1.":       s.Metrics.QueryResponseSec1_,
-		"10.":      s.Metrics.QueryResponseSec10_,
-		"100.":     s.Metrics.QueryResponseSec100_,
-		"1000.":    s.Metrics.QueryResponseSec1000_,
-		"10000.":   s.Metrics.QueryResponseSec10000_,
-		"100000.":  s.Metrics.QueryResponseSec100000_,
-		"1000000.": s.Metrics.QueryResponseSec100000_,
+	var h qrt.MysqlQrtHistogram
+	// percentiles to retrieve
+	p := [5]float32{50, 75, 90, 95, 99}
+
+	pctls := map[float32]*metrics.Gauge{
+		50: s.Metrics.QueryResponsePctl50,
+		75: s.Metrics.QueryResponsePctl75,
+		90: s.Metrics.QueryResponsePctl90,
+		95: s.Metrics.QueryResponsePctl95,
+		99: s.Metrics.QueryResponsePctl99,
 	}
 
 	res, err := s.Db.QueryReturnColumnDict(responseTimeQuery)
@@ -484,19 +473,27 @@ func (s *MysqlStatDBs) GetQueryResponseTime() {
 		return
 	}
 
-	for i, time := range res["time"] {
+	for i := 0; i < len(res["time"]); i++ {
+		res["time"][i] = strings.TrimSpace(res["time"][i])
+		res["total"][i] = strings.TrimSpace(res["total"][i])
+
 		count, err := strconv.ParseInt(res["count"][i], 10, 64)
 		if err != nil {
 			s.Db.Log(err)
 		}
-		if count < 1 {
-			continue
+
+		total, err := strconv.ParseFloat(res["total"][i], 64)
+		if err != nil {
+			s.Db.Log(err)
 		}
-		key := strings.Trim(time, " 0")
-		if timer, ok := timers[key]; ok {
-			timer.Set(uint64(count))
-		}
+
+		h = append(h, qrt.NewMysqlQrtBucket(res["time"][i], count, total))
 	}
+
+	for _, x := range p {
+		pctls[x].Set(h.Percentile(x) * 1000) // QRT Is in s and we want to display in ms.
+	}
+
 	return
 }
 
