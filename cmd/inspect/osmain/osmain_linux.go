@@ -19,17 +19,19 @@ import (
 	"github.com/square/inspect/os/memstat"
 	"github.com/square/inspect/os/misc"
 	"github.com/square/inspect/os/tcpstat"
+	"github.com/square/inspect/os/uptimestat"
 )
 
 type linuxStats struct {
-	osind    *Stats
-	dstat    *diskstat.DiskStat
-	fsstat   *fsstat.FSStat
-	ifstat   *interfacestat.InterfaceStat
-	tcpstat  *tcpstat.TCPStat
-	cgMem    *memstat.CgroupStat
-	cgCPU    *cpustat.CgroupStat
-	loadstat *loadstat.LoadStat
+	osind      *Stats
+	dstat      *diskstat.DiskStat
+	fsstat     *fsstat.FSStat
+	ifstat     *interfacestat.InterfaceStat
+	tcpstat    *tcpstat.TCPStat
+	cgMem      *memstat.CgroupStat
+	cgCPU      *cpustat.CgroupStat
+	loadstat   *loadstat.LoadStat
+	uptimestat *uptimestat.UptimeStat
 }
 
 // RegisterOsSpecific registers OS dependent statistics
@@ -42,6 +44,7 @@ func registerOsSpecific(m *metrics.MetricContext, step time.Duration,
 	s.ifstat = interfacestat.New(m, step)
 	s.tcpstat = tcpstat.New(m, step)
 	s.loadstat = loadstat.New(m, step)
+	s.uptimestat = uptimestat.New(m, step)
 	s.cgMem = memstat.NewCgroupStat(m, step)
 	s.cgCPU = cpustat.NewCgroupStat(m, step)
 	return s
