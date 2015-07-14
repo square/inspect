@@ -1,5 +1,7 @@
 #### mysql
-**mysql** is a collection of libraries for gathering various metrics for MySQL servers
+**mysql** is a collection of libraries for gathering various metrics for MySQL servers.
+
+Currently tested and used with Percona distribution of MySQL.
 
 **mysql** libraries can gather the following metrics:
  * Version information
