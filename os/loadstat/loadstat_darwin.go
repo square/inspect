@@ -58,9 +58,9 @@ func (s *LoadStat) Collect() {
 		f := strings.Split(scanner.Text(), " ")
 		if len(f) > 2 {
 			fmt.Println(f)
-			s.OneMinute.Set(misc.ParseFloat(f[0]))
-			s.FiveMinute.Set(misc.ParseFloat(f[1]))
-			s.FifteenMinute.Set(misc.ParseFloat(f[2]))
+			s.OneMinute.Set(misc.ParseFloat(f[2]))
+			s.FiveMinute.Set(misc.ParseFloat(f[3]))
+			s.FifteenMinute.Set(misc.ParseFloat(f[4]))
 		}
 		break
 	}
