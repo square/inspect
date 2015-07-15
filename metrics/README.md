@@ -58,6 +58,8 @@ go func() {
 resp, err := http.Get("http://localhost:12345/metrics.json")
 ```
 
-##### Dependencies
-Package dependency is managed by godep (https://github.com/tools/godep). Follow the docs there when adding/removing/updating
-package dependencies.
+##### FAQ
+  * What metric type should be used?
+   We follow venerable RRD conventions. 
+     * A **gauge** should be used for things like memory used at particular instant, or say price of AAPL stock.
+     * A **counter** should be used for continous incrementing counters - say for example - you are reading counters stored by kernel in /proc, like number of jiffies spent in kernel processing or if your app needs to keep track of say number of requests served. Use a **basiccounter** for lock-free counter. 
