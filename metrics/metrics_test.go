@@ -26,7 +26,7 @@ func TestCounterRate(t *testing.T) {
 		}
 	}()
 
-	time.Sleep(time.Millisecond * 5000)
+	time.Sleep(time.Millisecond * 1000)
 	tick1.Stop()
 	tick2.Stop()
 

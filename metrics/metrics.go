@@ -5,6 +5,7 @@ package metrics
 import (
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -31,6 +32,7 @@ type OutputFilterFunc func(name string, v interface{}) bool
 // MetricContext represents a reference to all metrics registered
 // by name within a namespace
 type MetricContext struct {
+	lock          sync.RWMutex
 	namespace     string
 	Counters      map[string]*Counter
 	Gauges        map[string]*Gauge
@@ -68,6 +70,9 @@ func NewMetricContext(namespace string) *MetricContext {
 
 // Register registers a metric with metriccontext
 func (m *MetricContext) Register(v interface{}, name string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	switch v := v.(type) {
 	case *BasicCounter:
 		m.BasicCounters[name] = v
@@ -82,6 +87,9 @@ func (m *MetricContext) Register(v interface{}, name string) {
 
 // Unregister unregisters a metric with metriccontext
 func (m *MetricContext) Unregister(v interface{}, name string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	switch v.(type) {
 	case *BasicCounter:
 		delete(m.BasicCounters, name)
