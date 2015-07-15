@@ -4,15 +4,16 @@
 package loadstat
 
 import (
-	"bufio"
-	"github.com/kr/pty"
-	"os/exec"
-	"strings"
-	"time"
-
+	"fmt"
 	"github.com/square/inspect/metrics"
 	"github.com/square/inspect/os/misc"
+	"time"
 )
+
+/*
+#include <stdlib.h>
+*/
+import "C"
 
 // LoadStat represents load average metrics for 1/5/15 Minutes of
 // current operating system.
@@ -46,22 +47,10 @@ func New(m *metrics.MetricContext, Step time.Duration) *LoadStat {
 
 // Collect populates Loadstat by using sysctl
 func (s *LoadStat) Collect() {
-	cmd := exec.Command("sysctl", "vm.loadavg")
-	tty, err := pty.Start(cmd)
-	if err != nil {
-		panic(err)
-	}
-	defer tty.Close()
+	var loadavg [3]C.double
 
-	scanner := bufio.NewScanner(tty)
-	for scanner.Scan() {
-		f := strings.Split(scanner.Text(), " ")
-		if len(f) > 2 {
-			fmt.Println(f)
-			s.OneMinute.Set(misc.ParseFloat(f[2]))
-			s.FiveMinute.Set(misc.ParseFloat(f[3]))
-			s.FifteenMinute.Set(misc.ParseFloat(f[4]))
-		}
-		break
-	}
+	C.getloadavg(&loadavg[0], 3)
+	s.OneMinute.Set(misc.ParseFloat(fmt.Sprintf("%.2f", loadavg[0])))
+	s.FiveMinute.Set(misc.ParseFloat(fmt.Sprintf("%.2f", loadavg[1])))
+	s.FifteenMinute.Set(misc.ParseFloat(fmt.Sprintf("%.2f", loadavg[2])))
 }
