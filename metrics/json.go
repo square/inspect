@@ -23,6 +23,8 @@ type MetricJSON struct {
 // EncodeJSON is a streaming encoder that writes all metrics passing filter
 // to writer w as JSON
 func (m *MetricContext) EncodeJSON(w io.Writer) error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
 	w.Write([]byte("["))
 	// JSON disallows trailing-comma
 	prependComma := false

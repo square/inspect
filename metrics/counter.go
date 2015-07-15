@@ -18,7 +18,7 @@ type Counter struct {
 	rate          float64
 	ticksPrevious int64
 	ticksCurrent  int64
-	mu            sync.RWMutex
+	mu            sync.Mutex
 }
 
 // NewCounter initializes and returns a new counter
