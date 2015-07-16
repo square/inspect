@@ -4,7 +4,6 @@
 package loadstat
 
 import (
-	"fmt"
 	"github.com/square/inspect/metrics"
 	"github.com/square/inspect/os/misc"
 	"time"
@@ -45,12 +44,14 @@ func New(m *metrics.MetricContext, Step time.Duration) *LoadStat {
 	return s
 }
 
-// Collect populates Loadstat by using sysctl
+// Collect populates Loadstat by using getloadavg
 func (s *LoadStat) Collect() {
 	var loadavg [3]C.double
 
+	//get system load averages
 	C.getloadavg(&loadavg[0], 3)
-	s.OneMinute.Set(misc.ParseFloat(fmt.Sprintf("%.2f", loadavg[0])))
-	s.FiveMinute.Set(misc.ParseFloat(fmt.Sprintf("%.2f", loadavg[1])))
-	s.FifteenMinute.Set(misc.ParseFloat(fmt.Sprintf("%.2f", loadavg[2])))
+
+	s.OneMinute.Set(float64(loadavg[0]))
+	s.FiveMinute.Set(float64(loadavg[1]))
+	s.FifteenMinute.Set(float64(loadavg[2]))
 }
