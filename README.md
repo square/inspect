@@ -27,10 +27,30 @@ Please see subdirectories for more detailed documentation
 * metrics/metricscheck - Simple metrics libraries for golang.
 
 #### Development
+
+Development setup is a bit tricky given interaction of godep/gopath:
+* Create a fork
+* Setup golang workspace and set GOPATH [Reference](https://golang.org/doc/code.html#Workspaces)
+  * export GOPATH=$HOME/godev # example
+  * mkdir -p $GOPATH/{src,bin,pkg}
+* Setup project
+  * mkdir -p $GOPATH/src/github.com/square
+  * cd $GOPATH/src/github.com/square
+  * git clone git@github.com:CHANGE-ME/inspect.git # change path to your fork
+  * cd inspect
+* Setup a reference to upstream to sync changes with upstream easily etc
+  * git remote add upstream github.com/square/inspect.git
+```
+[s@pain inspect (master)]$ git remote -v
+origin	git@github.com:syamp/inspect.git (fetch)
+origin	git@github.com:syamp/inspect.git (push)
+upstream	github.com/square/inspect.git (fetch)
+upstream	github.com/square/inspect.git (push)
+```
 * We use godep for vendoring and dependency management. We rewrite import
   paths. If you are adding a new dependency or updating one, please run
   1. godep save -r
-
+  
 * Please format, test and lint before submitting PRs
   1. go fmt ./...
   2. go test ./...
