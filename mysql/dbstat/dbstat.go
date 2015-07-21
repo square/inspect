@@ -209,7 +209,7 @@ const (
       FROM information_schema.processlist
      ORDER BY 1, time DESC;`
 	innodbQuery      = "SHOW GLOBAL VARIABLES LIKE 'innodb_log_file_size';"
-	securityQuery    = "SELECT user FROM mysql.user WHERE password = '' AND ssl_type = '';"
+	securityQuery    = "SELECT COUNT(*) FROM mysql.user WHERE (password = '' OR password IS NULL) AND (x509_subject='' OR x509_subject IS NULL);"
 	slaveBackupQuery = `
 SELECT COUNT(*) as count
   FROM information_schema.processlist
@@ -805,7 +805,16 @@ func (s *MysqlStatDBs) GetSecurity() {
 		s.Db.Log(err)
 		return
 	}
-	s.Metrics.UnsecureUsers.Set(float64(len(res["users"])))
+	unsecureUsers := 0
+	if len(res["COUNT(*)"]) > 0 {
+		count, err := strconv.ParseInt(res["COUNT(*)"][0], 10, 0)
+		if err != nil {
+			s.Db.Log(err)
+			return
+		}
+		unsecureUsers = int(count)
+	}
+	s.Metrics.UnsecureUsers.Set(float64(unsecureUsers))
 	return
 }
 

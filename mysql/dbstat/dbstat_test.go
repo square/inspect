@@ -431,3 +431,39 @@ func TestSlave3(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestUnsecureUsers1(t *testing.T) {
+	s := initMysqlStatDBs()
+	testquerycol = map[string]map[string][]string{
+		securityQuery: map[string][]string{
+			"COUNT(*)": []string{"8"},
+		},
+	}
+	expectedValues = map[interface{}]interface{}{
+		s.Metrics.UnsecureUsers: float64(8),
+	}
+	s.Collect()
+	time.Sleep(time.Millisecond * 1000 * 1)
+	err := checkResults()
+	if err != "" {
+		t.Error(err)
+	}
+}
+
+func TestUnsecureUsers2(t *testing.T) {
+	s := initMysqlStatDBs()
+	testquerycol = map[string]map[string][]string{
+		securityQuery: map[string][]string{
+			"COUNT(*)": []string{"0"},
+		},
+	}
+	expectedValues = map[interface{}]interface{}{
+		s.Metrics.UnsecureUsers: float64(0),
+	}
+	s.Collect()
+	time.Sleep(time.Millisecond * 1000 * 1)
+	err := checkResults()
+	if err != "" {
+		t.Error(err)
+	}
+}
