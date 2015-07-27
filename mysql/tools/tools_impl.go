@@ -206,7 +206,7 @@ func New(user, password, host, config string) (MysqlDB, error) {
 
 	// Override the username if specified
 	iniUser, err := c.GetString("client", "user")
-	if err != nil {
+	if err == nil {
 		dsn["user"] = iniUser
 	}
 
