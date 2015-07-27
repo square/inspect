@@ -188,7 +188,7 @@ func New(user, password, host, config string) (MysqlDB, error) {
 	// ex: "tcp(your.db.host.com:3306)"
 	dsn["host"] = host
 
-	//Parse ini file to get password
+	//Parse ini file to get credentials
 	iniFile := creds[user]
 	if config != "" {
 		iniFile = config
@@ -198,13 +198,23 @@ func New(user, password, host, config string) (MysqlDB, error) {
 		fmt.Fprintln(os.Stderr, err)
 		return database, errors.New("'" + iniFile + "' does not exist")
 	}
-	// read ini file to get password
+	// read ini file
 	c, err := conf.ReadConfigFile(iniFile)
 	if err != nil {
 		return database, err
 	}
+
+	// Override the username if specified
+	iniUser, err := c.GetString("client", "user")
+	if err != nil {
+		dsn["user"] = iniUser
+	}
+
+	// Set the password
 	pw, err := c.GetString("client", "password")
 	dsn["password"] = strings.Trim(pw, " \"")
+
+	// Build the DSN
 	database.dsnString = makeDsn(dsn)
 
 	//make connection to db
