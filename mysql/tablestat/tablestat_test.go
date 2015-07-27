@@ -60,6 +60,10 @@ func (s *testMysqlDB) QueryMapFirstColumnToRow(query string) (map[string][]strin
 	return testquerycol[query], nil
 }
 
+func (s *testMysqlDB) QueryDb(query string) ([]string, [][]string, error) {
+	return nil, nil, nil
+}
+
 func (s *testMysqlDB) Log(in interface{}) {
 	s.Logger.Println(in)
 }
