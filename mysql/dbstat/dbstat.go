@@ -37,42 +37,38 @@ type MysqlStatMetrics struct {
 	RelayLogSpace            *metrics.Gauge
 
 	//GetGlobalStatus
-	AbortedConnects              *metrics.Counter
-	BinlogCacheDiskUse           *metrics.Counter
-	BinlogCacheUse               *metrics.Counter
-	ComAlterTable                *metrics.Counter
-	ComBegin                     *metrics.Counter
-	ComCommit                    *metrics.Counter
-	ComCreateTable               *metrics.Counter
-	ComDelete                    *metrics.Counter
-	ComDeleteMulti               *metrics.Counter
-	ComDropTable                 *metrics.Counter
-	ComInsert                    *metrics.Counter
-	ComInsertSelect              *metrics.Counter
-	ComReplace                   *metrics.Counter
-	ComReplaceSelect             *metrics.Counter
-	ComRollback                  *metrics.Counter
-	ComSelect                    *metrics.Counter
-	ComUpdate                    *metrics.Counter
-	ComUpdateMulti               *metrics.Counter
-	CreatedTmpDiskTables         *metrics.Counter
-	CreatedTmpFiles              *metrics.Counter
-	CreatedTmpTables             *metrics.Counter
-	InnodbLogOsWaits             *metrics.Gauge
-	InnodbRowLockWaits           *metrics.Counter
-	InnodbRowLockTimeAvg         *metrics.Gauge
-	InnodbRowLockTimeMax         *metrics.Counter
-	InnodbBufferPoolReadRequests *metrics.Gauge
-	InnodbBufferPoolReads        *metrics.Gauge
-	PreparedStmtCount            *metrics.Gauge
-	PreparedStmtPct              *metrics.Gauge
-	Queries                      *metrics.Counter
-	SortMergePasses              *metrics.Counter
-	Uptime                       *metrics.Counter
-	ThreadsRunning               *metrics.Gauge
-	ThreadsConnected             *metrics.Gauge
-	ThreadsCached                *metrics.Gauge
-	ThreadsCreated               *metrics.Gauge
+	AbortedConnects      *metrics.Counter
+	BinlogCacheDiskUse   *metrics.Counter
+	BinlogCacheUse       *metrics.Counter
+	ComAlterTable        *metrics.Counter
+	ComBegin             *metrics.Counter
+	ComCommit            *metrics.Counter
+	ComCreateTable       *metrics.Counter
+	ComDelete            *metrics.Counter
+	ComDeleteMulti       *metrics.Counter
+	ComDropTable         *metrics.Counter
+	ComInsert            *metrics.Counter
+	ComInsertSelect      *metrics.Counter
+	ComReplace           *metrics.Counter
+	ComReplaceSelect     *metrics.Counter
+	ComRollback          *metrics.Counter
+	ComSelect            *metrics.Counter
+	ComUpdate            *metrics.Counter
+	ComUpdateMulti       *metrics.Counter
+	CreatedTmpDiskTables *metrics.Counter
+	CreatedTmpFiles      *metrics.Counter
+	CreatedTmpTables     *metrics.Counter
+	InnodbLogOsWaits     *metrics.Gauge
+	InnodbRowLockWaits   *metrics.Counter
+	InnodbRowLockTimeAvg *metrics.Gauge
+	InnodbRowLockTimeMax *metrics.Counter
+	PreparedStmtCount    *metrics.Gauge
+	PreparedStmtPct      *metrics.Gauge
+	Queries              *metrics.Counter
+	SortMergePasses      *metrics.Counter
+	ThreadsConnected     *metrics.Gauge
+	Uptime               *metrics.Counter
+	ThreadsRunning       *metrics.Gauge
 
 	//GetOldestQueryS
 	OldestQueryS *metrics.Gauge
@@ -127,7 +123,7 @@ type MysqlStatMetrics struct {
 	FileSystem                    *metrics.Gauge
 	FreeBuffers                   *metrics.Gauge
 	FsyncsPerSec                  *metrics.Gauge
-	InnodbHistoryListLength       *metrics.Gauge
+	InnodbHistoryLinkList         *metrics.Gauge
 	InnodbLastCheckpointAt        *metrics.Gauge
 	LockSystem                    *metrics.Gauge
 	InnodbLogFlushedUpTo          *metrics.Gauge
@@ -250,10 +246,8 @@ func MysqlStatMetricsNew(m *metrics.MetricContext) *MysqlStatMetrics {
 // sql.DB is safe for concurrent use by multiple goroutines
 // so launching each metric collector as its own goroutine is safe
 func (s *MysqlStatDBs) Collect() {
-	// Version is used in downstream calls so set it first.
-	s.GetVersion()
-
 	var queryFuncList = []func(){
+		s.GetVersion,
 		s.GetSlaveStats,
 		s.GetGlobalStatus,
 		s.GetBinlogStats,
@@ -366,41 +360,37 @@ func (s *MysqlStatDBs) GetGlobalStatus() {
 		return
 	}
 	vars := map[string]interface{}{
-		"Aborted_connects":                 s.Metrics.AbortedConnects,
-		"Binlog_cache_disk_use":            s.Metrics.BinlogCacheDiskUse,
-		"Binlog_cache_use":                 s.Metrics.BinlogCacheUse,
-		"Com_alter_table":                  s.Metrics.ComAlterTable,
-		"Com_begin":                        s.Metrics.ComBegin,
-		"Com_commit":                       s.Metrics.ComCommit,
-		"Com_create_table":                 s.Metrics.ComCreateTable,
-		"Com_delete":                       s.Metrics.ComDelete,
-		"Com_delete_multi":                 s.Metrics.ComDeleteMulti,
-		"Com_drop_table":                   s.Metrics.ComDropTable,
-		"Com_insert":                       s.Metrics.ComInsert,
-		"Com_insert_select":                s.Metrics.ComInsertSelect,
-		"Com_replace":                      s.Metrics.ComReplace,
-		"Com_replace_select":               s.Metrics.ComReplaceSelect,
-		"Com_rollback":                     s.Metrics.ComRollback,
-		"Com_select":                       s.Metrics.ComSelect,
-		"Com_update":                       s.Metrics.ComUpdate,
-		"Com_update_multi":                 s.Metrics.ComUpdateMulti,
-		"Created_tmp_disk_tables":          s.Metrics.CreatedTmpDiskTables,
-		"Created_tmp_files":                s.Metrics.CreatedTmpFiles,
-		"Created_tmp_tables":               s.Metrics.CreatedTmpTables,
-		"Innodb_log_os_waits":              s.Metrics.InnodbLogOsWaits,
-		"Innodb_row_lock_waits":            s.Metrics.InnodbRowLockWaits,
-		"Innodb_row_lock_time_avg":         s.Metrics.InnodbRowLockTimeAvg,
-		"Innodb_row_lock_time_max":         s.Metrics.InnodbRowLockTimeMax,
-		"Innodb_buffer_pool_read_requests": s.Metrics.InnodbBufferPoolReadRequests,
-		"Innodb_buffer_pool_reads":         s.Metrics.InnodbBufferPoolReads,
-		"Prepared_stmt_count":              s.Metrics.PreparedStmtCount,
-		"Queries":                          s.Metrics.Queries,
-		"Sort_merge_passes":                s.Metrics.SortMergePasses,
-		"Uptime":                           s.Metrics.Uptime,
-		"Threads_connected":                s.Metrics.ThreadsConnected,
-		"Threads_cached":                   s.Metrics.ThreadsCached,
-		"Threads_running":                  s.Metrics.ThreadsRunning,
-		"Threads_created":                  s.Metrics.ThreadsCreated,
+		"Aborted_connects":         s.Metrics.AbortedConnects,
+		"Binlog_cache_disk_use":    s.Metrics.BinlogCacheDiskUse,
+		"Binlog_cache_use":         s.Metrics.BinlogCacheUse,
+		"Com_alter_table":          s.Metrics.ComAlterTable,
+		"Com_begin":                s.Metrics.ComBegin,
+		"Com_commit":               s.Metrics.ComCommit,
+		"Com_create_table":         s.Metrics.ComCreateTable,
+		"Com_delete":               s.Metrics.ComDelete,
+		"Com_delete_multi":         s.Metrics.ComDeleteMulti,
+		"Com_drop_table":           s.Metrics.ComDropTable,
+		"Com_insert":               s.Metrics.ComInsert,
+		"Com_insert_select":        s.Metrics.ComInsertSelect,
+		"Com_replace":              s.Metrics.ComReplace,
+		"Com_replace_select":       s.Metrics.ComReplaceSelect,
+		"Com_rollback":             s.Metrics.ComRollback,
+		"Com_select":               s.Metrics.ComSelect,
+		"Com_update":               s.Metrics.ComUpdate,
+		"Com_update_multi":         s.Metrics.ComUpdateMulti,
+		"Created_tmp_disk_tables":  s.Metrics.CreatedTmpDiskTables,
+		"Created_tmp_files":        s.Metrics.CreatedTmpFiles,
+		"Created_tmp_tables":       s.Metrics.CreatedTmpTables,
+		"Innodb_log_os_waits":      s.Metrics.InnodbLogOsWaits,
+		"Innodb_row_lock_waits":    s.Metrics.InnodbRowLockWaits,
+		"Innodb_row_lock_time_avg": s.Metrics.InnodbRowLockTimeAvg,
+		"Innodb_row_lock_time_max": s.Metrics.InnodbRowLockTimeMax,
+		"Prepared_stmt_count":      s.Metrics.PreparedStmtCount,
+		"Queries":                  s.Metrics.Queries,
+		"Sort_merge_passes":        s.Metrics.SortMergePasses,
+		"Threads_connected":        s.Metrics.ThreadsConnected,
+		"Uptime":                   s.Metrics.Uptime,
+		"Threads_running":          s.Metrics.ThreadsRunning,
 	}
 
 	//range through expected metrics and grab from data
@@ -462,27 +452,6 @@ func (s *MysqlStatDBs) GetOldestTrx() {
 	return
 }
 
-// FlushQueryResponseTime flushes the Response Time Histogram
-func (s *MysqlStatDBs) FlushQueryResponseTime() error {
-	var flushquery string
-	version := strconv.FormatFloat(s.Metrics.Version.Get(), 'f', -1, 64)[0:3]
-
-	switch {
-	case version == "5.6":
-		flushquery = "SET GLOBAL query_response_time_flush=1"
-	case version == "5.5":
-		flushquery = "FLUSH QUERY_RESPONSE_TIME"
-	}
-
-	_, _, err := s.Db.QueryDb(flushquery)
-	if err != nil {
-		s.Db.Log(err)
-		return err
-	}
-
-	return nil
-}
-
 // GetQueryResponseTime collects various query response times
 func (s *MysqlStatDBs) GetQueryResponseTime() {
 	var h qrt.MysqlQrtHistogram
@@ -503,8 +472,6 @@ func (s *MysqlStatDBs) GetQueryResponseTime() {
 		s.Db.Log(err)
 		return
 	}
-
-	s.FlushQueryResponseTime()
 
 	for i := 0; i < len(res["time"]); i++ {
 		// time and total are varchars in I_S.Query_Response_Time
@@ -753,7 +720,7 @@ func (s *MysqlStatDBs) GetInnodbStats() {
 		"file_system":                 s.Metrics.FileSystem,
 		"free_buffers":                s.Metrics.FreeBuffers,
 		"fsyncs_per_s":                s.Metrics.FsyncsPerSec,
-		"history_list":                s.Metrics.InnodbHistoryListLength,
+		"history_list":                s.Metrics.InnodbHistoryLinkList,
 		"last_checkpoint_at":          s.Metrics.InnodbLastCheckpointAt,
 		"lock_system":                 s.Metrics.LockSystem,
 		"log_flushed_up_to":           s.Metrics.InnodbLogFlushedUpTo,

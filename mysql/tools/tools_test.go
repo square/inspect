@@ -308,14 +308,14 @@ func TestBadConnection1(t *testing.T) {
 	testdb := initDB(t)
 	defer testdb.db.Close()
 
-	_, _, err := testdb.QueryDb("SELECT * FROM people;")
+	_, _, err := testdb.queryDb("SELECT * FROM people;")
 	if err != nil {
 		t.Error(err)
 	}
 	//close the connection to the db to ~simulate (kinda)~ a lost connection
 	testdb.db.Close()
 
-	_, _, err = testdb.QueryDb("SELECT * FROM people;")
+	_, _, err = testdb.queryDb("SELECT * FROM people;")
 	if err != nil {
 		t.Error("failed to reconnect: %v", err)
 	}
@@ -450,12 +450,12 @@ func TestParseBufferPoolAndMem2(t *testing.T) {
 Total memory allocated 137363456; in additional pool allocated 0
 Total memory allocated by read views 472
 Internal hash tables (constant factor + variable factor)
-    Adaptive hash index 2250352
-    Page hash           139112
-    Dictionary cache    5771169
-    File system         1053936
-    Lock system         335128
-    Recovery system     0
+    Adaptive hash index 2250352  
+    Page hash           139112 
+    Dictionary cache    5771169     
+    File system         1053936    
+    Lock system         335128  
+    Recovery system     0   
 Dictionary memory allocated 5216401
 Buffer pool size        8191
 Buffer pool size, bytes 134201344

@@ -52,7 +52,7 @@ type InnodbStats struct {
 
 //wrapper for make_query, where if there is an error querying the database
 // retry connecting to the db and make the query
-func (database *mysqlDB) QueryDb(query string) ([]string, [][]string, error) {
+func (database *mysqlDB) queryDb(query string) ([]string, [][]string, error) {
 	var err error
 	for attempts := 0; attempts <= MaxRetries; attempts++ {
 		err = database.db.Ping()
@@ -115,7 +115,7 @@ func (database *mysqlDB) SetMaxConnections(maxConns int) {
 
 // QueryReturnColumnDict returns values of query in a mapping of column_name -> column
 func (database *mysqlDB) QueryReturnColumnDict(query string) (map[string][]string, error) {
-	columnNames, values, err := database.QueryDb(query)
+	columnNames, values, err := database.queryDb(query)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (database *mysqlDB) QueryReturnColumnDict(query string) (map[string][]strin
 
 //return values of query in a mapping of first columns entry -> row
 func (database *mysqlDB) QueryMapFirstColumnToRow(query string) (map[string][]string, error) {
-	_, values, err := database.QueryDb(query)
+	_, values, err := database.queryDb(query)
 	result := make(map[string][]string)
 	if len(values) == 0 {
 		return nil, nil
