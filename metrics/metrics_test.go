@@ -50,6 +50,34 @@ func TestCounterRateNoChange(t *testing.T) {
 	}
 }
 
+func TestCounterRateOverflow(t *testing.T) {
+	c := NewCounter()
+	c.Set(0)
+	time.Sleep(time.Millisecond * 100)
+	c.Set(10)
+	want := c.ComputeRate()
+	t.Logf("Computed rate before reset %v", want)
+	// counter reset
+	c.Set(0)
+	t.Logf("Counter state after reset=0 %v", c)
+	out := c.ComputeRate()
+	t.Logf("Computed rate after reset %v", out)
+	if math.IsNaN(out) || (math.Abs(out-want) > math.SmallestNonzeroFloat64) {
+		t.Errorf("c.ComputeRate() = %v, want %v", out, want)
+	}
+	time.Sleep(time.Millisecond * 1000)
+	c.Set(1)
+	t.Logf("Counter state after set=1 %v", c)
+	time.Sleep(time.Millisecond * 1000)
+	c.Set(2)
+	t.Logf("Counter state after set=2 %v", c)
+	want = 1.0
+	out = c.ComputeRate()
+	if math.IsNaN(out) || (math.Abs(out-want) > 0.05) {
+		t.Errorf("c.ComputeRate() = %v, want %v", out, want)
+	}
+}
+
 func TestDefaultGaugeVal(t *testing.T) {
 	c := NewGauge()
 	if !math.IsNaN(c.Get()) {
