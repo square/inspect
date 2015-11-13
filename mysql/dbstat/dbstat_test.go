@@ -167,7 +167,7 @@ func TestBasic(t *testing.T) {
 		},
 		sessionQuery2: map[string][]string{
 			"COMMAND": []string{"Sleep", "Connect", "Binlog Dump", "Binlog Dump GTID", "something else", "database stuff"},
-			"USER":    []string{"unauthenticated", "jackdorsey", "you", "santaclaus", "easterbunny", "me"},
+			"USER":    []string{"unauthenticated", "user1", "user2", "user3", "user4", "user5"},
 			"STATE":   []string{"statistics", "copying table", "Table Lock", "Table Lock", "Waiting for global read lock", "else"},
 		},
 		innodbQuery: map[string][]string{
@@ -303,7 +303,7 @@ func TestSessions(t *testing.T) {
 		sessionQuery2: map[string][]string{
 			"COMMAND": []string{"Sleep", "Connect", "Binlog Dump", "Binlog Dump GTID", "something else", "database stuff",
 				"Sleep", "Sleep", "database stuff", "other things", "square", "square2"},
-			"USER": []string{"unauthenticated", "jackdorsey", "you", "santaclaus", "easterbunny", "me",
+			"USER": []string{"unauthenticated", "user1", "user2", "user3", "user4", "user5",
 				"also unauthenticated", "unauthenticated", "root", "root", "root", "root"},
 			"STATE": []string{"statistics", "copying another table", "Table Lock", "Table Lock",
 				"Waiting for global read lock", "else", "Table Lock", "Locked", "statistics",
