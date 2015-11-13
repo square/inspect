@@ -166,7 +166,7 @@ func TestBasic(t *testing.T) {
 			"max_connections": []string{"10"},
 		},
 		sessionQuery2: map[string][]string{
-			"COMMAND": []string{"Sleep", "Connect", "Binlog Dump", "something else", "database stuff"},
+			"COMMAND": []string{"Sleep", "Connect", "Binlog Dump", "Binlog Dump GTID", "something else", "database stuff"},
 			"USER":    []string{"unauthenticated", "jackdorsey", "santaclaus", "easterbunny", "me"},
 			"STATE":   []string{"statistics", "copying table", "Table Lock", "Waiting for global read lock", "else"},
 		},
@@ -301,7 +301,7 @@ func TestSessions(t *testing.T) {
 			"max_connections": []string{"100"},
 		},
 		sessionQuery2: map[string][]string{
-			"COMMAND": []string{"Sleep", "Connect", "Binlog Dump", "something else", "database stuff",
+			"COMMAND": []string{"Sleep", "Connect", "Binlog Dump", "Binlog Dump GTID", "something else", "database stuff",
 				"Sleep", "Sleep", "database stuff", "other things", "square"},
 			"USER": []string{"unauthenticated", "jackdorsey", "santaclaus", "easterbunny", "me",
 				"also unauthenticated", "unauthenticated", "root", "root", "root"},

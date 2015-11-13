@@ -173,7 +173,7 @@ const (
 	slaveQuery  = "SHOW SLAVE STATUS;"
 	oldestQuery = `
  SELECT time FROM information_schema.processlist
-  WHERE command NOT IN ('Sleep','Connect','Binlog Dump')
+  WHERE command NOT IN ('Sleep','Connect','Binlog Dump','Binlog Dump GTID')
   ORDER BY time DESC LIMIT 1;`
 	oldestTrx = `
   SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(MIN(trx_started)) AS time
@@ -184,7 +184,7 @@ const (
 	maxPreparedStmtCountQuery = "SHOW GLOBAL VARIABLES LIKE 'max_prepared_stmt_count';"
 	longQuery                 = `
     SELECT * FROM information_schema.processlist
-     WHERE command NOT IN ('Sleep', 'Connect', 'Binlog Dump')
+     WHERE command NOT IN ('Sleep', 'Connect', 'Binlog Dump','Binlog Dump GTID')
        AND time > 30;`
 	versionQuery     = "SELECT VERSION();"
 	binlogStatsQuery = "SHOW MASTER STATUS;"
@@ -650,7 +650,7 @@ func (s *MysqlStatDBs) GetSessions() {
 	copyToTable := 0
 	statistics := 0
 	for i, val := range res["COMMAND"] {
-		if val != "Sleep" && val != "Connect" && val != "Binlog Dump" {
+		if val != "Sleep" && val != "Connect" && val != "Binlog Dump" && val != "Binlog Dump GTID" {
 			active++
 		}
 		if matched, err := regexp.MatchString("unauthenticated", res["USER"][i]); err == nil && matched {
