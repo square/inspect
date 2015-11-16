@@ -167,6 +167,10 @@ type MysqlStatMetrics struct {
 
 	//GetSSL
 	HasSSL *metrics.Gauge
+
+	//GetReadOnly
+	IsReadOnly      *metrics.Gauge
+	IsSuperReadOnly *metrics.Gauge
 }
 
 const (
@@ -214,8 +218,10 @@ const (
 SELECT COUNT(*) as count
   FROM information_schema.processlist
  WHERE user LIKE '%backup%';`
-	sslQuery        = "SELECT @@have_ssl;"
-	defaultMaxConns = 5
+	sslQuery           = "SELECT @@have_ssl;"
+	defaultMaxConns    = 5
+	readOnlyQuery      = "SELECT @@read_only;"
+	superReadOnlyQuery = "SELECT @@super_read_only;"
 )
 
 // New initializes mysqlstat
@@ -262,6 +268,7 @@ func (s *MysqlStatDBs) Collect() {
 		s.GetInnodbStats,
 		s.GetSecurity,
 		s.GetSSL,
+		s.GetReadOnly,
 	}
 	util.CollectInParallel(queryFuncList)
 }
@@ -833,6 +840,40 @@ func (s *MysqlStatDBs) GetSSL() {
 		s.Metrics.HasSSL.Set(1)
 	} else {
 		s.Metrics.HasSSL.Set(0)
+	}
+	return
+}
+
+func (s *MysqlStatDBs) GetReadOnly() {
+
+	// Get ReadOnly
+	res, err := s.Db.QueryReturnColumnDict(readOnlyQuery)
+	if err != nil {
+		s.Db.Log(err)
+		return
+	}
+	if row, ok := res["@@read_only"]; !ok || len(row) == 0 {
+		s.Db.Log("Mysql does not have the @@read_only field")
+		s.Metrics.IsReadOnly.Set(0)
+	} else if row[0] == "1" {
+		s.Metrics.IsReadOnly.Set(1)
+	} else {
+		s.Metrics.IsReadOnly.Set(0)
+	}
+
+	// Get SuperReadOnly
+	res, err = s.Db.QueryReturnColumnDict(superReadOnlyQuery)
+	if err != nil {
+		s.Db.Log(err)
+		return
+	}
+	if row, ok := res["@@super_read_only"]; !ok || len(row) == 0 {
+		s.Db.Log("Mysql does not have the @@super_read_only field")
+		s.Metrics.IsSuperReadOnly.Set(0)
+	} else if row[0] == "1" {
+		s.Metrics.IsSuperReadOnly.Set(1)
+	} else {
+		s.Metrics.IsSuperReadOnly.Set(0)
 	}
 	return
 }
