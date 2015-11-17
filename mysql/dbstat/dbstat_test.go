@@ -467,3 +467,25 @@ func TestUnsecureUsers2(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestReadOnly(t *testing.T) {
+	s := initMysqlStatDBs()
+	testquerycol = map[string]map[string][]string{
+		readOnlyQuery: map[string][]string{
+			"@@read_only": []string{"0"},
+		},
+		superReadOnlyQuery: map[string][]string{
+			"@@super_read_only": []string{"1"},
+		},
+	}
+	expectedValues = map[interface{}]interface{}{
+		s.Metrics.IsReadOnly:      float64(0),
+		s.Metrics.IsSuperReadOnly: float64(1),
+	}
+	s.Collect()
+	time.Sleep(time.Millisecond * 1000 * 1)
+	err := checkResults()
+	if err != "" {
+		t.Error(err)
+	}
+}
