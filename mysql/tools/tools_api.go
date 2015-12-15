@@ -21,6 +21,13 @@ type MysqlDB interface {
 	// Log Prints in to the logger
 	Log(in interface{})
 
+	//wrapper for make_query, where if there is an error querying the database
+	// retry connecting to the db and make the query
+	QueryDb(query string) ([]string, [][]string, error)
+
+	//wrapper for ExecQuery, which only returns a summary of the action taken
+	DbExec(query string) (err error)
+
 	// Closes the connection with the database
 	Close()
 }

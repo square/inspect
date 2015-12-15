@@ -30,6 +30,10 @@ import (
 	"github.com/square/inspect/metrics"
 )
 
+func (s *testMysqlDB) QueryDb(query string) ([]string, [][]string, error) {
+	return nil, nil, nil
+}
+
 type testMysqlDB struct {
 	Logger *log.Logger
 }
@@ -70,6 +74,10 @@ func (s *testMysqlDB) Close() {
 
 func (s *testMysqlDB) SetMaxConnections(maxConns int) {
 	return
+}
+
+func (s *testMysqlDB) DbExec(query string) (err error) {
+	return nil
 }
 
 func initMysqlStatUser() *MysqlStatUsers {
