@@ -64,6 +64,14 @@ func (s *testMysqlDB) Log(in interface{}) {
 	s.Logger.Println(in)
 }
 
+func (s *testMysqlDB) QueryDb(query string) ([]string, [][]string, error) {
+	return nil, nil, nil
+}
+
+func (s *testMysqlDB) DbExec(query string) (err error) {
+	return nil
+}
+
 func (s *testMysqlDB) Close() {
 	return
 }

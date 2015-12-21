@@ -52,7 +52,7 @@ type InnodbStats struct {
 
 //wrapper for make_query, where if there is an error querying the database
 // retry connecting to the db and make the query
-func (database *mysqlDB) queryDb(query string) ([]string, [][]string, error) {
+func (database *mysqlDB) QueryDb(query string) ([]string, [][]string, error) {
 	var err error
 	for attempts := 0; attempts <= MaxRetries; attempts++ {
 		err = database.db.Ping()
@@ -66,6 +66,22 @@ func (database *mysqlDB) queryDb(query string) ([]string, [][]string, error) {
 		database.db, err = sql.Open("mysql", database.dsnString)
 	}
 	return nil, nil, err
+}
+
+//wrapper for ExecQuery, which only returns a summary of the action taken
+func (database *mysqlDB) DbExec(query string) (err error) {
+	for attempts := 0; attempts <= MaxRetries; attempts++ {
+		err = database.db.Ping()
+		if err == nil {
+			if _, err := database.db.Exec(query); err == nil {
+				return nil
+			}
+			return err
+		}
+		database.db.Close()
+		database.db, err = sql.Open("mysql", database.dsnString)
+	}
+	return err
 }
 
 //makes a query to the database
@@ -115,7 +131,7 @@ func (database *mysqlDB) SetMaxConnections(maxConns int) {
 
 // QueryReturnColumnDict returns values of query in a mapping of column_name -> column
 func (database *mysqlDB) QueryReturnColumnDict(query string) (map[string][]string, error) {
-	columnNames, values, err := database.queryDb(query)
+	columnNames, values, err := database.QueryDb(query)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +144,7 @@ func (database *mysqlDB) QueryReturnColumnDict(query string) (map[string][]strin
 
 //return values of query in a mapping of first columns entry -> row
 func (database *mysqlDB) QueryMapFirstColumnToRow(query string) (map[string][]string, error) {
-	_, values, err := database.queryDb(query)
+	_, values, err := database.QueryDb(query)
 	result := make(map[string][]string)
 	if len(values) == 0 {
 		return nil, nil

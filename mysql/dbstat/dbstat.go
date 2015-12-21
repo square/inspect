@@ -252,8 +252,10 @@ func MysqlStatMetricsNew(m *metrics.MetricContext) *MysqlStatMetrics {
 // sql.DB is safe for concurrent use by multiple goroutines
 // so launching each metric collector as its own goroutine is safe
 func (s *MysqlStatDBs) Collect() {
+
+	s.GetVersion()
+
 	var queryFuncList = []func(){
-		s.GetVersion,
 		s.GetSlaveStats,
 		s.GetGlobalStatus,
 		s.GetBinlogStats,
@@ -459,6 +461,30 @@ func (s *MysqlStatDBs) GetOldestTrx() {
 	return
 }
 
+// FlushQueryResponseTime flushes the Response Time Histogram
+func (s *MysqlStatDBs) FlushQueryResponseTime() error {
+	var flushquery string
+	version := strconv.FormatFloat(s.Metrics.Version.Get(), 'f', -1, 64)[0:3]
+
+	switch {
+	case version == "5.6":
+		flushquery = "SET GLOBAL query_response_time_flush=1"
+	case version == "5.5":
+		flushquery = "FLUSH NO_WRITE_TO_BINLOG QUERY_RESPONSE_TIME"
+	default:
+		err := fmt.Errorf("Version unsupported: %s", version)
+		return err
+	}
+
+	err := s.Db.DbExec(flushquery)
+	if err != nil {
+		s.Db.Log(err)
+		return err
+	}
+
+	return nil
+}
+
 // GetQueryResponseTime collects various query response times
 func (s *MysqlStatDBs) GetQueryResponseTime() {
 	var h qrt.MysqlQrtHistogram
@@ -479,6 +505,8 @@ func (s *MysqlStatDBs) GetQueryResponseTime() {
 		s.Db.Log(err)
 		return
 	}
+
+	s.FlushQueryResponseTime()
 
 	for i := 0; i < len(res["time"]); i++ {
 		// time and total are varchars in I_S.Query_Response_Time

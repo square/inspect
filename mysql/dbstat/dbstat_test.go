@@ -76,6 +76,14 @@ func (s *testMysqlDB) SetMaxConnections(maxConns int) {
 	return
 }
 
+func (s *testMysqlDB) QueryDb(query string) ([]string, [][]string, error) {
+	return nil, nil, nil
+}
+
+func (s *testMysqlDB) DbExec(query string) (err error) {
+	return nil
+}
+
 //initializes a test instance of MysqlStatDBs.
 // instance does not connect with a db
 func initMysqlStatDBs() *MysqlStatDBs {
