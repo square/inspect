@@ -408,11 +408,14 @@ func (s *PerProcessStatMetrics) Collect() {
 	}
 
 	scanner := bufio.NewScanner(file)
+	// command names can have spaces in them and are captured with ()
+	r := regexp.MustCompile("(\\d+)\\s\\((.*)\\)\\s(.*)")
 	for scanner.Scan() {
-		f := strings.Split(scanner.Text(), " ")
-		s.Utime.Set(misc.ParseUint(f[13]))
-		s.Stime.Set(misc.ParseUint(f[14]))
-		s.Rss.Set(float64(misc.ParseUint(f[23])))
+		parts := r.FindStringSubmatch(scanner.Text())
+		f := strings.Split(parts[3], " ")
+		s.Utime.Set(misc.ParseUint(f[11]))
+		s.Stime.Set(misc.ParseUint(f[12]))
+		s.Rss.Set(float64(misc.ParseUint(f[21])))
 	}
 
 	// collect IO metrics
