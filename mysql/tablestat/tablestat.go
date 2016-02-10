@@ -93,7 +93,7 @@ type MysqlStatPerTable struct {
 	RowsChanged         *metrics.Counter
 	RowsChangedXIndexes *metrics.Counter
 	Autoincrement       *metrics.Counter
-	AutoincPercentFull  *metrics.Gauge
+	AutoincPercentLeft  *metrics.Gauge
 }
 
 // MysqlStatPerDB - metrics for each database
@@ -142,6 +142,7 @@ func (s *MysqlStatTables) Collect() {
 		s.GetDBSizes,
 		s.GetTableSizes,
 		s.GetTableStatistics,
+		s.GetColumnStats,
 	}
 	util.CollectInParallel(queryFuncList)
 }
@@ -318,7 +319,7 @@ func (s *MysqlStatTables) GetColumnStats() {
 		s.checkTable(dbname, tblname)
 		s.nLock.Lock()
 		s.DBs[dbname].Tables[tblname].Autoincrement.Set(uint64(autoincrement))
-		s.DBs[dbname].Tables[tblname].AutoincPercentFull.Set(float64(pctdiff))
+		s.DBs[dbname].Tables[tblname].AutoincPercentLeft.Set(float64(pctdiff))
 		s.nLock.Unlock()
 	}
 }
@@ -344,10 +345,8 @@ func (s *MysqlStatTables) FormatGraphite(w io.Writer) error {
 				strconv.FormatUint(tbl.RowsChangedXIndexes.Get(), 10))
 			fmt.Fprintln(w, dbname+"."+tblname+".Autoincrement.Value "+
 				strconv.FormatUint(tbl.Autoincrement.Get(), 10))
-			fmt.Fprintln(w, dbname+"."+tblname+".Autoincrement.Rate "+
-				strconv.FormatFloat(tbl.Autoincrement.ComputeRate(), 'f', 5, 64))
-			fmt.Fprintln(w, dbname+"."+tblname+".AutoincPercentFull "+
-				strconv.FormatFloat(tbl.AutoincPercentFull.Get(), 'f', 5, 64))
+			fmt.Fprintln(w, dbname+"."+tblname+".AutoincPercentLeft "+
+				strconv.FormatFloat(tbl.AutoincPercentLeft.Get(), 'f', 5, 64))
 		}
 	}
 	return nil
