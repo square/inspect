@@ -222,6 +222,42 @@ SELECT COUNT(*) as count
 	defaultMaxConns    = 5
 	readOnlyQuery      = "SELECT @@read_only;"
 	superReadOnlyQuery = "SELECT @@super_read_only;"
+	autoincQuery       = `SELECT * FROM (select
+    table_schema,
+    table_name,
+    column_name,
+    proper_type,
+    auto_increment,
+    max_size,
+    (((max_size - auto_increment) / max_size ) * 100) AS pct_diff
+  from
+    INFORMATION_SCHEMA.columns
+    natural join INFORMATION_SCHEMA.tables
+    join (
+      select 'tinyint' as proper_type, 127 as max_size
+      union all
+      select 'tinyint unsigned' as proper_type, 255 as max_size
+      union all
+      select 'smallint' as proper_type, 32767 as max_size
+      union all
+      select 'smallint unsigned' as proper_type, 65535 as max_size
+      union all
+      select 'mediumint' as proper_type, 8388607 as max_size
+      union all
+      select 'mediumint unsigned' as proper_type, 16777215 as max_size
+      union all
+      select 'int' as proper_type, 2147483647 as max_size
+      union all
+      select 'int unsigned' as proper_type, 4294967295 as max_size
+      union all
+      select 'bigint' as proper_type, 9223372036854775807 as max_size
+      union all
+      select 'bigint unsigned' as proper_type, 18446744073709551615 as max_size
+    ) maxes ON (proper_type = CONCAT(LEFT(column_type, GREATEST(0, LOCATE('(', column_type)-1)), RIGHT(column_type, LENGTH(column_type)-LOCATE(')', column_type))))
+  where
+    table_schema NOT IN ('common_schema', 'mysql', '_pending_drops')
+    AND extra like '%auto_increment%') AS a
+  WHERE pct_diff < 40;`
 )
 
 // New initializes mysqlstat
