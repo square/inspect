@@ -343,7 +343,7 @@ func (s *MysqlStatTables) FormatGraphite(w io.Writer) error {
 				strconv.FormatUint(tbl.RowsChanged.Get(), 10))
 			fmt.Fprintln(w, dbname+"."+tblname+".RowsChangedXIndexes "+
 				strconv.FormatUint(tbl.RowsChangedXIndexes.Get(), 10))
-			fmt.Fprintln(w, dbname+"."+tblname+".Autoincrement.Value "+
+			fmt.Fprintln(w, dbname+"."+tblname+".Autoincrement "+
 				strconv.FormatUint(tbl.Autoincrement.Get(), 10))
 			fmt.Fprintln(w, dbname+"."+tblname+".AutoincPercentLeft "+
 				strconv.FormatFloat(tbl.AutoincPercentLeft.Get(), 'f', 5, 64))
