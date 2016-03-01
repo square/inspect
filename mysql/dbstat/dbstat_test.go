@@ -43,6 +43,9 @@ var (
 	//Simulates QueryMapFirstColumnToRow
 	testqueryrow = map[string]map[string][]string{}
 
+	//Hacky way of testing "SHOW GLOBAL STATUS"
+	testglobalstats = []map[string][]string{}
+
 	//Mapping of metric and its expected value
 	// defined as map of interface{}->interface{} so
 	// can switch between metrics.Gauge and metrics.Counter
@@ -57,6 +60,13 @@ func (s *testMysqlDB) QueryReturnColumnDict(query string) (map[string][]string, 
 	if query == "SHOW ENGINE INNODB STATUS" {
 		return nil, errors.New(" not checking innodb parser in this test")
 	}
+	/*
+		if query == "SHOW GLOBAL STATUS" {
+			result := testglobalstats[0]
+			testglobalstats = testglobalstats[:len(testglobalstats)-1]
+			return result, nil
+		}
+	*/
 	return testquerycol[query], nil
 }
 
@@ -495,5 +505,25 @@ func TestReadOnly(t *testing.T) {
 	err := checkResults()
 	if err != "" {
 		t.Error(err)
+	}
+}
+
+func TestgetQueriesAndUptime1(t *testing.T) {
+	s := initMysqlStatDBs()
+	testquerycol = map[string]map[string][]string{
+		globalStatsQuery: map[string][]string{
+			"Queries": []string{"0"},
+			"Uptime":  []string{"1"},
+		},
+	}
+	q, u, err := s.getQueriesAndUptime()
+	if err != nil {
+		t.Error("Values not collected properly")
+	}
+	if q != 0.0 {
+		t.Error("Values not collected properly")
+	}
+	if u != 1.0 {
+		t.Error("Values not collected properly")
 	}
 }

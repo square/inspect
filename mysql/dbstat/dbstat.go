@@ -4,6 +4,7 @@
 package dbstat
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -12,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/square/inspect/metrics"
 	"github.com/square/inspect/mysql/qrt"
@@ -171,6 +173,9 @@ type MysqlStatMetrics struct {
 	//GetReadOnly
 	IsReadOnly      *metrics.Gauge
 	IsSuperReadOnly *metrics.Gauge
+
+	//Queries Per Second
+	QueriesPerSecond *metrics.Gauge
 }
 
 const (
@@ -271,8 +276,63 @@ func (s *MysqlStatDBs) Collect() {
 		s.GetSecurity,
 		s.GetSSL,
 		s.GetReadOnly,
+		s.GetQueriesPerSecond,
 	}
 	util.CollectInParallel(queryFuncList)
+}
+
+func (s *MysqlStatDBs) getQueriesAndUptime() (float64, float64, error) {
+	res, err := s.Db.QueryMapFirstColumnToRow(globalStatsQuery)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	q, ok := res["Queries"]
+	if !ok {
+		return 0, 0, errors.New("ERROR1: Queries not found in 'SHOW GLOBAL STATUS'")
+	}
+	u, ok := res["Uptime"]
+	if !ok {
+		return 0, 0, errors.New("ERROR2: Uptime not found in 'SHOW GLOBAL STATUS'")
+	}
+	if len(q) < 1 {
+		return 0, 0, errors.New("ERROR: Queries not found in 'SHOW GLOBAL STATUS'")
+	}
+	if len(u) < 1 {
+		return 0, 0, errors.New("ERROR: Uptime not found in 'SHOW GLOBAL STATUS'")
+	}
+
+	queries, err := strconv.ParseFloat(q[0], 64)
+	if err != nil {
+		return 0, 0, err
+	}
+	uptime, err := strconv.ParseFloat(u[0], 64)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return queries, uptime, nil
+}
+
+func (s *MysqlStatDBs) GetQueriesPerSecond() {
+	q1, u1, err := s.getQueriesAndUptime()
+	if err != nil {
+		s.Db.Log(err)
+		return
+	}
+
+	time.Sleep(2 * time.Second)
+	q2, u2, err := s.getQueriesAndUptime()
+	if err != nil {
+		s.Db.Log(err)
+		return
+	}
+	if (u2 - u1) <= 0 {
+		s.Db.Log(errors.New("ERROR gathering QPS metrics"))
+		return
+	}
+	queriesPerSecond := ((q2 - q1) / (u2 - u1))
+	s.Metrics.QueriesPerSecond.Set(queriesPerSecond)
 }
 
 // GetSlaveStats returns statistics regarding mysql replication
