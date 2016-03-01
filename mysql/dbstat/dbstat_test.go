@@ -542,8 +542,7 @@ func TestGetQueriesPerSecond(t *testing.T) {
 	expectedValues = map[interface{}]interface{}{
 		s.Metrics.QueriesPerSecond: float64(100),
 	}
-	s.Collect()
-	time.Sleep(time.Millisecond * 1000 * 1)
+	s.GetQueriesPerSecond()
 	err := checkResults()
 	if err != "" {
 		t.Error(err)
