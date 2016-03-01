@@ -289,11 +289,11 @@ func (s *MysqlStatDBs) getQueriesAndUptime() (float64, float64, error) {
 
 	q, ok := res["Queries"]
 	if !ok {
-		return 0, 0, errors.New("ERROR: Queries not found in 'SHOW GLOBAL STATUS'")
+		return 0, 0, errors.New("ERROR: Error in querying for queries in 'SHOW GLOBAL STATUS'")
 	}
 	u, ok := res["Uptime"]
 	if !ok {
-		return 0, 0, errors.New("ERROR: Uptime not found in 'SHOW GLOBAL STATUS'")
+		return 0, 0, errors.New("ERROR: Error in querying for uptime in 'SHOW GLOBAL STATUS'")
 	}
 	if len(q) < 1 {
 		return 0, 0, errors.New("ERROR: Queries not found in 'SHOW GLOBAL STATUS'")
@@ -328,7 +328,7 @@ func (s *MysqlStatDBs) GetQueriesPerSecond() {
 		return
 	}
 	if (u2 - u1) <= 0 {
-		s.Db.Log(errors.New("ERROR gathering QPS metrics"))
+		s.Db.Log(errors.New("ERROR gathering QPS metrics: uptime not consistent"))
 		return
 	}
 	queriesPerSecond := ((q2 - q1) / (u2 - u1))

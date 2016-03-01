@@ -507,7 +507,7 @@ func TestReadOnly(t *testing.T) {
 	}
 }
 
-func TestGetQueriesAndUptime1(t *testing.T) {
+func TestGetQueriesAndUptime(t *testing.T) {
 	s := initMysqlStatDBs()
 	testglobalstats = []map[string][]string{
 		map[string][]string{
