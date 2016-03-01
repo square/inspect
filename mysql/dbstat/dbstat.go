@@ -289,11 +289,11 @@ func (s *MysqlStatDBs) getQueriesAndUptime() (float64, float64, error) {
 
 	q, ok := res["Queries"]
 	if !ok {
-		return 0, 0, errors.New("ERROR1: Queries not found in 'SHOW GLOBAL STATUS'")
+		return 0, 0, errors.New("ERROR: Queries not found in 'SHOW GLOBAL STATUS'")
 	}
 	u, ok := res["Uptime"]
 	if !ok {
-		return 0, 0, errors.New("ERROR2: Uptime not found in 'SHOW GLOBAL STATUS'")
+		return 0, 0, errors.New("ERROR: Uptime not found in 'SHOW GLOBAL STATUS'")
 	}
 	if len(q) < 1 {
 		return 0, 0, errors.New("ERROR: Queries not found in 'SHOW GLOBAL STATUS'")

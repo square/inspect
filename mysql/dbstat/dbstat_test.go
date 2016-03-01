@@ -60,17 +60,18 @@ func (s *testMysqlDB) QueryReturnColumnDict(query string) (map[string][]string, 
 	if query == "SHOW ENGINE INNODB STATUS" {
 		return nil, errors.New(" not checking innodb parser in this test")
 	}
-	/*
-		if query == "SHOW GLOBAL STATUS" {
-			result := testglobalstats[0]
-			testglobalstats = testglobalstats[:len(testglobalstats)-1]
-			return result, nil
-		}
-	*/
+
 	return testquerycol[query], nil
 }
 
 func (s *testMysqlDB) QueryMapFirstColumnToRow(query string) (map[string][]string, error) {
+	if query == "SHOW GLOBAL STATUS;" {
+		result := testglobalstats[0]
+		if len(testglobalstats) > 1 {
+			testglobalstats = testglobalstats[1:]
+		}
+		return result, nil
+	}
 	return testquerycol[query], nil
 }
 
@@ -191,18 +192,16 @@ func TestBasic(t *testing.T) {
 		innodbQuery: map[string][]string{
 			"Value": []string{"100"},
 		},
-		//not going to include every metric since the parsing function is the same for each
-		// missing metrics should not break metrics collector
-		globalStatsQuery: map[string][]string{
-			"Aborted_connects": []string{"51"},
-			"Queries":          []string{"8"},
-			"Uptime":           []string{"100"},
-			"Threads_running":  []string{"5"},
-		},
 		sslQuery: map[string][]string{
 			"@@have_ssl": []string{"YES"},
 		},
 	}
+	testglobalstats = []map[string][]string{map[string][]string{
+		"Aborted_connects": []string{"51"},
+		"Queries":          []string{"8"},
+		"Uptime":           []string{"100"},
+		"Threads_running":  []string{"5"},
+	}}
 	//expected results
 	expectedValues = map[interface{}]interface{}{
 		s.Metrics.SlaveSecondsBehindMaster: float64(8),
@@ -508,22 +507,45 @@ func TestReadOnly(t *testing.T) {
 	}
 }
 
-func TestgetQueriesAndUptime1(t *testing.T) {
+func TestGetQueriesAndUptime1(t *testing.T) {
 	s := initMysqlStatDBs()
-	testquerycol = map[string]map[string][]string{
-		globalStatsQuery: map[string][]string{
+	testglobalstats = []map[string][]string{
+		map[string][]string{
 			"Queries": []string{"0"},
 			"Uptime":  []string{"1"},
 		},
 	}
 	q, u, err := s.getQueriesAndUptime()
 	if err != nil {
-		t.Error("Values not collected properly")
+		t.Error("Values not collected properly: err")
 	}
 	if q != 0.0 {
-		t.Error("Values not collected properly")
+		t.Error("Values not collected properly: q")
 	}
 	if u != 1.0 {
-		t.Error("Values not collected properly")
+		t.Error("Values not collected properly: u")
+	}
+}
+
+func TestGetQueriesPerSecond(t *testing.T) {
+	s := initMysqlStatDBs()
+	testglobalstats = []map[string][]string{
+		map[string][]string{
+			"Queries": []string{"0"},
+			"Uptime":  []string{"1"},
+		},
+		map[string][]string{
+			"Queries": []string{"100"},
+			"Uptime":  []string{"2"},
+		},
+	}
+	expectedValues = map[interface{}]interface{}{
+		s.Metrics.QueriesPerSecond: float64(100),
+	}
+	s.Collect()
+	time.Sleep(time.Millisecond * 1000 * 1)
+	err := checkResults()
+	if err != "" {
+		t.Error(err)
 	}
 }
