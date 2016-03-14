@@ -98,7 +98,7 @@ func initPostgresStat() *PostgresStat {
 	return s
 }
 
-//checks ressults between expected and actual metrics gathered
+//checks results between expected and actual metrics gathered
 func checkResults() string {
 	for metric, expected := range expectedValues {
 		switch m := metric.(type) {
