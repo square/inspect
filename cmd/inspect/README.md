@@ -42,7 +42,7 @@ http://godoc.org/github.com/square/inspect/metrics
 
 ###### Server 
 
-*inspect* can be run in server mode to run continously and expose metrics via HTTP JSON api
+*inspect* can be run in server mode to run continuously and expose metrics via HTTP JSON api
 
 ./bin/inspect  -server -address :12345
 

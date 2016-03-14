@@ -23,7 +23,7 @@ func main() {
 	m := metrics.NewMetricContext("system")
 
 	flag.StringVar(&user, "u", "postgres", "user using database")
-	flag.BoolVar(&servermode, "server", false, "Runs continously and exposes metrics as JSON on HTTP")
+	flag.BoolVar(&servermode, "server", false, "Runs continuously and exposes metrics as JSON on HTTP")
 	flag.StringVar(&address, "address", ":12345", "address to listen on for http if running in server mode")
 	flag.IntVar(&stepSec, "step", 2, "metrics are collected every step seconds")
 	flag.StringVar(&conf, "conf", "/root/.my.cnf", "configuration file")

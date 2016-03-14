@@ -40,7 +40,7 @@ func main() {
 	flag.IntVar(&nIter, "n", 0, "Quit after these many iterations")
 	flag.IntVar(&nIter, "iterations", 0, "Quit after these many iterations")
 	flag.BoolVar(&servermode, "server", false,
-		"Runs continously and exposes metrics as JSON on HTTP")
+		"Runs continuously and exposes metrics as JSON on HTTP")
 	flag.StringVar(&address, "address", ":19999",
 		"address to listen on for http if running in server mode")
 	flag.IntVar(&stepSec, "step", 2,
