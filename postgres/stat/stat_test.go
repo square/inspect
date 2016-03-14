@@ -48,7 +48,7 @@ var (
 	// and between float64 and uint64 easily
 	expectedValues = map[interface{}]interface{}{}
 
-	//  expecting lots of log messages becaues of tests
+	//  expecting lots of log messages because of tests
 	//  redirect to this file
 	logFile, _ = os.OpenFile("./test.log", os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0644)
 )
