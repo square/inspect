@@ -5,7 +5,7 @@ import (
 )
 
 // MysqlQrtBucket : https://www.percona.com/doc/percona-server/5.6/diagnostics/response_time_distribution.html
-// Represents a row from information_schema.Query_Reponse_Time
+// Represents a row from information_schema.Query_Response_Time
 type MysqlQrtBucket struct {
 	time  float64
 	count int64
