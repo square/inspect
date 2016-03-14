@@ -7,7 +7,7 @@
 // Each test first sets input data, and uses Collect() to gather
 // metrics rather than calling that metric's get function.
 // This ensures that other functions still work on malformed
-// or missing input, such as what would happend with an incorrect query.
+// or missing input, such as what would happen with an incorrect query.
 // Testing the correctness of postgres queries should be done manually.
 //
 // Integration/Acceptance testing is harder and is avoided because
