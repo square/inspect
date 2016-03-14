@@ -147,7 +147,7 @@ func checkResults() string {
 // More complex string manipulations are further tested in
 // later test functions.
 func TestBasic(t *testing.T) {
-	//intitialize MysqlStatDBs
+	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
 
 	//set desired test output
@@ -252,7 +252,7 @@ func TestBasic(t *testing.T) {
 
 //test parsing of version
 func TestVersion1(t *testing.T) {
-	//intialize MysqlStatDBs
+	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
 
 	//set desired test result
@@ -277,7 +277,7 @@ func TestVersion1(t *testing.T) {
 }
 
 func TestVersion2(t *testing.T) {
-	//intialize MysqlStatDBs
+	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
 	//repeat for different test results
 	testquerycol = map[string]map[string][]string{
@@ -297,7 +297,7 @@ func TestVersion2(t *testing.T) {
 }
 
 func TestVersion3(t *testing.T) {
-	//intialize MysqlStatDBs
+	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
 	testquerycol = map[string]map[string][]string{
 		versionQuery: map[string][]string{
@@ -358,7 +358,7 @@ func TestSessions(t *testing.T) {
 
 // Test basic parsing of slave info query
 func TestSlave1(t *testing.T) {
-	//intitialize MysqlStatDBs
+	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
@@ -394,7 +394,7 @@ func TestSlave1(t *testing.T) {
 
 // Test when slave is down and backup isn't running
 func TestSlave2(t *testing.T) {
-	//intitialize MysqlStatDBs
+	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
@@ -426,7 +426,7 @@ func TestSlave2(t *testing.T) {
 
 // Test when slave is down and backup is running
 func TestSlave3(t *testing.T) {
-	//intitialize MysqlStatDBs
+	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{

@@ -219,7 +219,7 @@ func (s *PostgresStat) checkMode(name string) {
 	s.modeLock.Unlock()
 }
 
-//checks for intialization of table metrics
+//checks for initialization of table metrics
 func (s *PostgresStat) checkTable(dbname, tblname string) {
 	s.checkDB(dbname)
 	s.dbLock.Lock()
