@@ -137,8 +137,8 @@ func printOsSpecific(batchmode bool, layout *DisplayWidgets, v interface{}) {
 		if len(interfaceByUsage) > i {
 			iface := interfaceByUsage[i]
 			name = truncate(iface.Name, 10)
-			rx = misc.BitSize(iface.TXBandwidth())
-			tx = misc.BitSize(iface.RXBandwidth())
+			rx = misc.BitSize(iface.RXBandwidth())
+			tx = misc.BitSize(iface.TXBandwidth())
 		}
 		interfaces = append(interfaces, fmt.Sprintf("%10s r:%8s t:%8s", name, rx, tx))
 	}
