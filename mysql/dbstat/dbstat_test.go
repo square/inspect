@@ -104,6 +104,13 @@ func initMysqlStatDBs() *MysqlStatDBs {
 		Logger: log.New(os.Stderr, "TESTING LOG: ", log.Lshortfile),
 	}
 	s.Metrics = MysqlStatMetricsNew(metrics.NewMetricContext("system"))
+	slaveLagQuery = "SELECT max(%s) AS TIMESTAMP from %s"
+
+	// Have test function now() always return 2016-05-20 15:21:45.65432 UTC
+	now = func() time.Time {
+		return time.Date(2016, time.May, 20, 15, 21, 45, 654320000, time.UTC)
+	}
+
 	return s
 }
 
@@ -443,6 +450,30 @@ func TestSlave3(t *testing.T) {
 	}
 	s.Collect()
 	time.Sleep(time.Millisecond * 1000 * 1)
+	err := checkResults()
+	if err != "" {
+		t.Error(err)
+	}
+}
+
+// Test that a slave lag table can be queried correctly
+func TestSlaveLagTable(t *testing.T) {
+	s := initMysqlStatDBs()
+
+	s.slaveLagTable = "test-dbadmin-table"
+	slaveLagQuery = "SELECT max(ts) AS TIMESTAMP from test-dbadmin-table"
+	testquerycol = map[string]map[string][]string{
+		slaveLagQuery: map[string][]string{
+			"TIMESTAMP": []string{"2016-05-20 15:21:46.00000"},
+		},
+	}
+	s.GetSlaveLag()
+	timestamp := time.Date(2016, time.May, 20, 15, 21, 46, 00000000, time.UTC)
+	timeDiff := now().Sub(timestamp)
+
+	expectedValues = map[interface{}]interface{}{
+		s.Metrics.SlaveSecondsBehindMaster: timeDiff.Seconds(),
+	}
 	err := checkResults()
 	if err != "" {
 		t.Error(err)
