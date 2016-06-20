@@ -27,6 +27,7 @@ type MysqlStatDBs struct {
 	util.MysqlStat
 	Metrics        *MysqlStatMetrics //collection of metrics
 	MasterHostname string
+	slaveLagTable  string // table for reading timestamps, of the form "database.table"
 }
 
 // MysqlStatMetrics represents metrics being collected about the server/database
@@ -229,10 +230,17 @@ SELECT COUNT(*) as count
 	superReadOnlyQuery = "SELECT @@super_read_only;"
 )
 
+var (
+	slaveLagQuery = "SELECT max(%s) AS TIMESTAMP from %s"
+	now           = func() time.Time { return time.Now() }
+)
+
 // New initializes mysqlstat
 // arguments: metrics context, username, password, path to config file for
 // mysql. username and password can be left as "" if a config file is specified.
-func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlStatDBs, error) {
+// options is used to specify a separate timestamp table to gather replication lag (similar to pt-heartbeat).
+// If options is empty, replication lag will be determined using SHOW SLAVE STATUS;
+func New(m *metrics.MetricContext, user, password, host, config string, options map[string]string) (*MysqlStatDBs, error) {
 	s := new(MysqlStatDBs)
 	// connect to database
 	var err error
@@ -243,6 +251,15 @@ func New(m *metrics.MetricContext, user, password, host, config string) (*MysqlS
 	}
 	s.SetMaxConnections(defaultMaxConns)
 	s.Metrics = MysqlStatMetricsNew(m)
+
+	// If the user specifies a separate table to gather replication lag from
+	if slavelagTable, ok := options["slavelagtable"]; ok {
+		if slavelagCol, ok := options["slavelagcolumn"]; ok {
+			s.slaveLagTable = slavelagTable
+			slaveLagQuery = fmt.Sprintf(slaveLagQuery, slavelagCol, slavelagTable)
+		}
+	}
+
 	return s, nil
 }
 
@@ -335,6 +352,32 @@ func (s *MysqlStatDBs) GetQueriesPerSecond() {
 	s.Metrics.QueriesPerSecond.Set(queriesPerSecond)
 }
 
+// GetSlaveLag determines replication lag by querying for the latest timestamp
+// in a heartbeat table. (Simlar to the table used in pt-heartbeat).
+func (s *MysqlStatDBs) GetSlaveLag() {
+	if s.slaveLagTable == "" {
+		s.Db.Log(errors.New("No slave lag table specified."))
+		return
+	}
+	res, err := s.Db.QueryReturnColumnDict(slaveLagQuery)
+	if err != nil {
+		s.Db.Log(err)
+		return
+	}
+	if len(res["TIMESTAMP"]) == 0 {
+		s.Db.Log("No timestamp in " + s.slaveLagTable + " found")
+		return
+	}
+	timestamp := res["TIMESTAMP"][0]
+	ts, err := time.Parse("2006-01-02 15:04:05.00000", timestamp)
+	if err != nil {
+		s.Db.Log(err)
+		return
+	}
+	lag := now().Sub(ts)
+	s.Metrics.SlaveSecondsBehindMaster.Set(lag.Seconds())
+}
+
 // GetSlaveStats returns statistics regarding mysql replication
 func (s *MysqlStatDBs) GetSlaveStats() {
 	s.Metrics.ReplicationRunning.Set(float64(-1))
@@ -377,6 +420,9 @@ func (s *MysqlStatDBs) GetSlaveStats() {
 			s.Metrics.ReplicationRunning.Set(float64(1))
 		}
 	}
+	if s.slaveLagTable != "" {
+		s.GetSlaveLag()
+	}
 
 	relayMasterLogFile, _ := res["Relay_Master_Log_File"]
 	if len(relayMasterLogFile) > 0 {
@@ -405,6 +451,7 @@ func (s *MysqlStatDBs) GetSlaveStats() {
 			s.Metrics.RelayLogSpace.Set(float64(relay_log_space))
 		}
 	}
+
 	return
 }
 

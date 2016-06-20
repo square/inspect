@@ -5,6 +5,7 @@ package metrics
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 )
 
 // Counter represents an always incrementing metric type
@@ -47,7 +48,7 @@ func (c *Counter) Set(v uint64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.ticksCurrent = ticks
+	c.ticksCurrent = atomic.LoadInt64(&ticks)
 	c.v = v
 
 	// initialize previous values to current if counter
@@ -63,7 +64,7 @@ func (c *Counter) Add(delta uint64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.ticksCurrent = ticks
+	c.ticksCurrent = atomic.LoadInt64(&ticks)
 	c.v += delta
 
 	// initialize previous values to current if counter
