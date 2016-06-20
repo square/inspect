@@ -392,6 +392,7 @@ func (s *MysqlStatDBs) GetSlaveStats() {
 			s.Db.Log(err)
 		} else {
 			if numBackups > 0 {
+				s.Metrics.SlaveSecondsBehindMaster.Set(float64(-1))
 				s.Metrics.ReplicationRunning.Set(float64(1))
 			}
 		}
