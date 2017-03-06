@@ -569,15 +569,15 @@ func (s *PostgresStat) getVacuumsInProgress() {
 	}
 	auto := 0
 	manual := 0
-	for _, querC := range res[s.queryCol] {
-		if strings.Contains(querC, "datfrozenxid") {
+	for _, queryC := range res[s.queryCol] {
+		if strings.Contains(queryC, "datfrozenxid") {
 			continue
 		}
-		m := regexp.MustCompile("(?i)(\\s*autovacuum:\\s*)?(\\s*VACUUM\\s*)?(\\s*ANALYZE\\s*)?\\s*(.+?)$").FindStringSubmatch(querC)
+		m := regexp.MustCompile("(?i)(\\s*autovacuum:\\s*)?(\\s*VACUUM\\s*)?(\\s*ANALYZE\\s*)?\\s*(.+?)$").FindStringSubmatch(queryC)
 
 		//TODO: extras
 		if len(m) > 0 {
-			if strings.HasPrefix(querC, "autovacuum:") {
+			if strings.HasPrefix(queryC, "autovacuum:") {
 				auto++
 			} else {
 				manual++
