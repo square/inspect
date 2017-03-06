@@ -127,7 +127,7 @@ func checkResults() string {
 				return "unexpected type"
 			}
 			if m != val {
-				return ("unexpected value - got: " + m + " but wated " + val)
+				return ("unexpected value - got: " + m + " but wanted " + val)
 			}
 		}
 	}
