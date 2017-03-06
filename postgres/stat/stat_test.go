@@ -147,7 +147,7 @@ func TestBasic(t *testing.T) {
 			"uptime": []string{"15110"},
 		},
 		versionQuery: map[string][]string{
-			"version": []string{"PostgreSQL 9.1.5 x86_64-linuc-gnu"},
+			"version": []string{"PostgreSQL 9.1.5 x86_64-linux-gnu"},
 		},
 		tpsQuery: map[string][]string{
 			"tps": []string{"15122"},
@@ -233,7 +233,7 @@ func TestVersion1(t *testing.T) {
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		versionQuery: map[string][]string{
-			"version": []string{"PostgreSQL 9.1.5 x86_64-linuc-gnu"},
+			"version": []string{"PostgreSQL 9.1.5 x86_64-linux-gnu"},
 		},
 	}
 	s.Collect()
@@ -253,7 +253,7 @@ func TestVersion2(t *testing.T) {
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		versionQuery: map[string][]string{
-			"version": []string{"PostgreSQL 9.22.5 x86_64-linuc-gnu"},
+			"version": []string{"PostgreSQL 9.22.5 x86_64-linux-gnu"},
 		},
 	}
 	s.Collect()
@@ -273,7 +273,7 @@ func TestVersion3(t *testing.T) {
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		versionQuery: map[string][]string{
-			"version": []string{"PostgreSQL 9.3.43 x86_64-linuc-gnu"},
+			"version": []string{"PostgreSQL 9.3.43 x86_64-linux-gnu"},
 		},
 	}
 	s.Collect()
