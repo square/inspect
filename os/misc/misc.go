@@ -175,7 +175,7 @@ func FindCgroupMount(subsystem string) (string, error) {
 	return "", errors.New("no cgroup mount found")
 }
 
-// FindCgroups returns all cgroups with atleast one active task attached
+// FindCgroups returns all cgroups with at least one active task attached
 // for the input subsystem.
 func FindCgroups(mountpoint string) ([]string, error) {
 	cgroups := make([]string, 0, 128)
