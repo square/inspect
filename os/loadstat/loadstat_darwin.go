@@ -4,9 +4,10 @@
 package loadstat
 
 import (
+	"time"
+
 	"github.com/square/inspect/metrics"
 	"github.com/square/inspect/os/misc"
-	"time"
 )
 
 /*

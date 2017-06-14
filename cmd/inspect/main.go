@@ -14,7 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/square/inspect/Godeps/_workspace/src/github.com/gizak/termui"
+	"github.com/gizak/termui"
+
 	"github.com/square/inspect/cmd/inspect/osmain"
 	"github.com/square/inspect/metrics"
 )

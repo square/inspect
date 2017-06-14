@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	_ "github.com/square/inspect/Godeps/_workspace/src/github.com/lib/pq" // database driver for postgres
+	_ "github.com/lib/pq" // database driver for postgres
 )
 
 const (
