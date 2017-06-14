@@ -6,6 +6,7 @@
 package tools
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -15,12 +16,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/square/inspect/Godeps/_workspace/src/code.google.com/p/goconf/conf" // used for parsing config files
+	"code.google.com/p/goconf/conf"    // used for parsing config files
+	_ "github.com/go-sql-driver/mysql" // mysql driver
 )
-
-// sql packages and driver
-import "database/sql"
-import _ "github.com/square/inspect/Godeps/_workspace/src/github.com/go-sql-driver/mysql" // mysql driver
 
 type mysqlDB struct {
 	db        *sql.DB

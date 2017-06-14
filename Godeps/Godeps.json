@@ -1,6 +1,7 @@
 {
 	"ImportPath": "github.com/square/inspect",
-	"GoVersion": "go1.4.2",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v77",
 	"Packages": [
 		"./..."
 	],
@@ -29,8 +30,12 @@
 			"Rev": "a8d8d01c4f91602f876bf5aa210274e8203a6b45"
 		},
 		{
+			"ImportPath": "github.com/lib/pq/oid",
+			"Comment": "go1.0-cutoff-51-ga8d8d01",
+			"Rev": "a8d8d01c4f91602f876bf5aa210274e8203a6b45"
+		},
+		{
 			"ImportPath": "github.com/mattn/go-runewidth",
-			"Comment": "travisish-33-g5890272",
 			"Rev": "5890272cd41c5103531cd7b79e428d99c9e97f76"
 		},
 		{

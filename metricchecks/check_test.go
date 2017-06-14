@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/square/inspect/metrics"
+	"golang.org/x/tools/go/exact"
+	_ "golang.org/x/tools/go/gcimporter"
+	"golang.org/x/tools/go/types"
 
-	"github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/exact"
-	_ "github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/gcimporter"
-	"github.com/square/inspect/Godeps/_workspace/src/golang.org/x/tools/go/types"
+	"github.com/square/inspect/metrics"
 )
 
 //initializes a test Checker

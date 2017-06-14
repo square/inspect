@@ -22,7 +22,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/square/inspect/Godeps/_workspace/src/github.com/codahale/tmpmysqld"
+	"github.com/codahale/tmpmysqld"
 )
 
 var (
