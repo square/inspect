@@ -6,7 +6,25 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 )
+
+// package initialization code
+// sets up a ticker to "cache" time
+
+const jiffy = 100
+
+var ticks int64
+var ticker = time.NewTicker(time.Millisecond * jiffy)
+
+func init() {
+	start := time.Now().UnixNano()
+	go func() {
+		for t := range ticker.C {
+			atomic.StoreInt64(&ticks, t.UnixNano()-start)
+		}
+	}()
+}
 
 // Counter represents an always incrementing metric type
 // Counter differs from BasicCounter by having additional
