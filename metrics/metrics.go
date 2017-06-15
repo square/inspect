@@ -6,24 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 )
-
-// package initialization code
-// sets up a ticker to "cache" time
-
-var ticks int64
-
-func init() {
-	start := time.Now().UnixNano()
-	ticker := time.NewTicker(time.Millisecond * jiffy)
-	go func() {
-		for t := range ticker.C {
-			atomic.StoreInt64(&ticks, t.UnixNano()-start)
-		}
-	}()
-}
 
 // OutputFilterFunc represents a function that is used to filter
 // metrics from being reported out from JSON handler
@@ -46,8 +30,6 @@ type MetricContext struct {
 // in-memory
 // Arguments:
 // namespace - namespace that all metrics in this context belong to
-
-const jiffy = 100
 
 //nanoseconds in a second represented in float64
 const NsInSec = float64(time.Second)
