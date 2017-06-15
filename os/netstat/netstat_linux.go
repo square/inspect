@@ -1,11 +1,12 @@
 // Copyright (c) 2015 Square, Inc
 
-// Package tcpstat implements metrics collection related to TCP
-package tcpstat
+// Package netstat implements metrics collection related to TCP and UDP
+package netstat
 
 import (
 	"bufio"
-	"os"
+	"bytes"
+	"io/ioutil"
 	"regexp"
 	"strings"
 	"time"
@@ -15,6 +16,15 @@ import (
 )
 
 var root = "/" // to make testing easy
+
+// NetStat is a holder for TCP and UDP statistics.
+type NetStat struct {
+	TCPStat         TCPStat
+	UDPStat         UDPStat
+	ExtendedMetrics ExtendedMetrics
+
+	m *metrics.MetricContext
+}
 
 // TCPStat represents statistics about various tcp indicators
 // and is automatically initialized.
@@ -31,9 +41,17 @@ type TCPStat struct {
 	RetransSegs  *metrics.Counter
 	InErrs       *metrics.Counter
 	OutRsts      *metrics.Counter
-	Extended     *ExtendedMetrics
-	// not exported
-	m *metrics.MetricContext
+}
+
+// UDPStat represents statistics about UDP. Reflection is used to map field names to
+// kernel data.
+type UDPStat struct {
+	InDatagrams  *metrics.Counter
+	NoPorts      *metrics.Counter
+	InErrors     *metrics.Counter
+	OutDatagrams *metrics.Counter
+	RcvbufErrors *metrics.Counter
+	SndbufErrors *metrics.Counter
 }
 
 // ExtendedMetrics represents extended statistics about various tcp indicators
@@ -49,13 +67,12 @@ type ExtendedMetrics struct {
 
 // New starts metrics collection every Step and registers with
 // metricscontext
-func New(m *metrics.MetricContext, Step time.Duration) *TCPStat {
-	s := new(TCPStat)
-	s.m = m
-	s.Extended = new(ExtendedMetrics)
+func New(m *metrics.MetricContext, Step time.Duration) *NetStat {
+	s := &NetStat{m: m}
 	// initialize all metrics and register them
-	misc.InitializeMetrics(s, m, "tcpstat", true)
-	misc.InitializeMetrics(s.Extended, m, "tcpstat.ext", true)
+	misc.InitializeMetrics(&s.TCPStat, m, "tcpstat", true)
+	misc.InitializeMetrics(&s.UDPStat, m, "udpstat", true)
+	misc.InitializeMetrics(&s.ExtendedMetrics, m, "tcpstat.ext", true)
 	// collect once
 	s.Collect()
 	// collect metrics every Step
@@ -68,19 +85,20 @@ func New(m *metrics.MetricContext, Step time.Duration) *TCPStat {
 	return s
 }
 
-// Collect populates TCPStat by reading /proc/net/snmp and /proc/net/netstat
-func (s *TCPStat) Collect() {
-	populateMetrics(s.m, s, root+"proc/net/snmp", "Tcp:")
-	populateMetrics(s.m, s.Extended, root+"proc/net/netstat", "TcpExt:")
+// Collect populates NetStat by reading /proc/net/snmp and /proc/net/netstat
+func (s *NetStat) Collect() {
+	if snmp, err := ioutil.ReadFile(root + "proc/net/snmp"); err == nil {
+		populateMetrics(s.m, &s.TCPStat, snmp, "Tcp:")
+		populateMetrics(s.m, &s.UDPStat, snmp, "Udp:")
+	}
+	if netstat, err := ioutil.ReadFile(root + "proc/net/netstat"); err == nil {
+		populateMetrics(s.m, &s.ExtendedMetrics, netstat, "TcpExt:")
+	}
 }
 
 // Unexported functions
-func populateMetrics(m *metrics.MetricContext, s interface{}, filename string, prefix string) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return
-	}
-	scanner := bufio.NewScanner(file)
+func populateMetrics(m *metrics.MetricContext, s interface{}, data []byte, prefix string) {
+	scanner := bufio.NewScanner(bytes.NewReader(data))
 	var keys []string
 	var values []string
 	seen := false
