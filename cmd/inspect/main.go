@@ -84,6 +84,7 @@ func main() {
 	// run http server
 	if servermode {
 		go func() {
+			http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {})
 			http.HandleFunc("/api/v1/metrics.json", m.HttpJsonHandler)
 			log.Fatal(http.ListenAndServe(address, nil))
 		}()
