@@ -41,7 +41,7 @@ type ProcessStat struct {
 // cpu statistics every Step
 // TODO: Implement better heuristics to manage load
 //   * Collect metrics for newer processes at faster rate
-//   * Slower rate for processes with neglible rate?
+//   * Slower rate for processes with negligible rate?
 func NewProcessStat(m *metrics.MetricContext, Step time.Duration) *ProcessStat {
 	c := new(ProcessStat)
 	c.m = m

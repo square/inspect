@@ -526,7 +526,7 @@ ROLLING BACK 123 lock struct(s), heap size 15, 13 row lock(s), undo log entries 
 ROLLING BACK 123 lock struct(s), heap size 15, 13 row lock(s), undo log entries 100
 ROLLING BACK 123 lock struct(s), heap size 15, 13 row lock(s), undo log entries 50
 ROLLING BACK 123 lock struct(s), heap size 15, 13 row lock(s), undo log entries 123
-ROLLING BACK 123 lock struct(s), heap size 15, 13 row lock(s), undo log entres 123`
+ROLLING BACK 123 lock struct(s), heap size 15, 13 row lock(s), undo log entries 123`
 	idb.parseTransactions(blob)
 	expectedValues := map[string]string{
 		"trxes_not_started": "6",

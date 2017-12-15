@@ -7,7 +7,7 @@
 // Each test first sets input data, and uses Collect() to gather
 // metrics rather than calling that metric's get function.
 // This ensures that other functions still work on malformed
-// or missing input, such as what would happend with an incorrect query.
+// or missing input, such as what would happen with an incorrect query.
 // Testing the correctness of postgres queries should be done manually.
 //
 // Integration/Acceptance testing is harder and is avoided because
@@ -48,7 +48,7 @@ var (
 	// and between float64 and uint64 easily
 	expectedValues = map[interface{}]interface{}{}
 
-	//  expecting lots of log messages becaues of tests
+	//  expecting lots of log messages because of tests
 	//  redirect to this file
 	logFile, _ = os.OpenFile("./test.log", os.O_WRONLY|os.O_CREATE|os.O_SYNC, 0644)
 )
@@ -98,7 +98,7 @@ func initPostgresStat() *PostgresStat {
 	return s
 }
 
-//checks ressults between expected and actual metrics gathered
+//checks results between expected and actual metrics gathered
 func checkResults() string {
 	for metric, expected := range expectedValues {
 		switch m := metric.(type) {
@@ -127,7 +127,7 @@ func checkResults() string {
 				return "unexpected type"
 			}
 			if m != val {
-				return ("unexpected value - got: " + m + " but wated " + val)
+				return ("unexpected value - got: " + m + " but wanted " + val)
 			}
 		}
 	}
@@ -147,7 +147,7 @@ func TestBasic(t *testing.T) {
 			"uptime": []string{"15110"},
 		},
 		versionQuery: map[string][]string{
-			"version": []string{"PostgreSQL 9.1.5 x86_64-linuc-gnu"},
+			"version": []string{"PostgreSQL 9.1.5 x86_64-linux-gnu"},
 		},
 		tpsQuery: map[string][]string{
 			"tps": []string{"15122"},
@@ -233,7 +233,7 @@ func TestVersion1(t *testing.T) {
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		versionQuery: map[string][]string{
-			"version": []string{"PostgreSQL 9.1.5 x86_64-linuc-gnu"},
+			"version": []string{"PostgreSQL 9.1.5 x86_64-linux-gnu"},
 		},
 	}
 	s.Collect()
@@ -253,7 +253,7 @@ func TestVersion2(t *testing.T) {
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		versionQuery: map[string][]string{
-			"version": []string{"PostgreSQL 9.22.5 x86_64-linuc-gnu"},
+			"version": []string{"PostgreSQL 9.22.5 x86_64-linux-gnu"},
 		},
 	}
 	s.Collect()
@@ -273,7 +273,7 @@ func TestVersion3(t *testing.T) {
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
 		versionQuery: map[string][]string{
-			"version": []string{"PostgreSQL 9.3.43 x86_64-linuc-gnu"},
+			"version": []string{"PostgreSQL 9.3.43 x86_64-linux-gnu"},
 		},
 	}
 	s.Collect()

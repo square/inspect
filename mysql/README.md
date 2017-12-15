@@ -66,7 +66,7 @@ fmt.Println(sqlstats.Metrics.Queries.Get())
 // Print the number of select queries per second
 fmt.Println(sqlstats.ComSelect.ComputeRate())
 
-// Print the size of table t1 in databse db1
+// Print the size of table t1 in database db1
 fmt.Println(sqltablestats.DBs["db1"].Tables["t1"].Metrics.SizeBytes.Get())
 ```
 

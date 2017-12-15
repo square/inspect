@@ -42,7 +42,7 @@ http://godoc.org/github.com/square/inspect/metrics
 
 ###### Server 
 
-*inspect* can be run in server mode to run continously and expose metrics via HTTP JSON api
+*inspect* can be run in server mode to run continuously and expose metrics via HTTP JSON api
 
 ./bin/inspect  -server -address :12345
 
@@ -62,7 +62,7 @@ s@c62% curl localhost:12345/api/v1/metrics.json 2>/dev/null
 ```
 
 ###### Todo
-  * Rules for inspection need to seperated out into user supplied code/config. Currently inspect command line has hard-coded guesswork
+  * Rules for inspection need to separated out into user supplied code/config. Currently inspect command line has hard-coded guesswork
   * PerProcessStat on darwin doesn't include optimizations done for Linux. 
   * Command line utility needs much nicer formatting and options to dig into per process/cgroup details
   * Add caching support to reduce load when multiple invocations of inspect happen.

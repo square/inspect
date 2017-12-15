@@ -353,7 +353,7 @@ func (s *MysqlStatDBs) GetQueriesPerSecond() {
 }
 
 // GetSlaveLag determines replication lag by querying for the latest timestamp
-// in a heartbeat table. (Simlar to the table used in pt-heartbeat).
+// in a heartbeat table. (Similar to the table used in pt-heartbeat).
 func (s *MysqlStatDBs) GetSlaveLag() {
 	if s.slaveLagTable == "" {
 		s.Db.Log(errors.New("No slave lag table specified."))

@@ -35,7 +35,7 @@ func main() {
 	flag.StringVar(&host, "h", "",
 		"address and protocol of the database to connect to. leave blank for tcp(127.0.0.1:3306)")
 	flag.BoolVar(&servermode, "server", false,
-		"Runs continously and exposes metrics as JSON on HTTP")
+		"Runs continuously and exposes metrics as JSON on HTTP")
 	flag.StringVar(&address, "address", ":12345",
 		"address to listen on for http if running in server mode")
 	flag.IntVar(&stepSec, "step", 2, "metrics are collected every step seconds")

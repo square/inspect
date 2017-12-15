@@ -35,6 +35,6 @@ All metrics collected are exported, so any metric may be accessed using Get():
 // Print the number of queries accessed
 fmt.Println(sqlstats.Metrics.Queries.Get())
 
-// Print the size of table t1 in databse db1
+// Print the size of table t1 in database db1
 fmt.Println(sqltablestats.DBs["db1"].Tables["t1"].Metrics.SizeBytes.Get())
 ```
