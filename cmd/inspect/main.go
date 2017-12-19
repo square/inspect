@@ -64,7 +64,7 @@ func main() {
 		err := termui.Init()
 		termui.UseTheme("helloworld")
 		if err != nil {
-			log.Fatalf("Unable to initialize termui", err)
+			log.Fatal("Unable to initialize termui:", err)
 		}
 		widgets = uiWidgets()
 		uiSummaryBody = uiSummary(widgets)
