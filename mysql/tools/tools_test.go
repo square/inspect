@@ -252,7 +252,7 @@ func TestQueryMapFirstColumnToRow1(t *testing.T) {
 		t.Error("Unexpected data returned")
 	}
 	//its important to test lengths so tests don't panic and exit early
-	if len(alice) != 1 || len(alice) != 1 || len(alice) != 1 || len(alice) != 1 {
+	if len(alice) != 1 || len(bob) != 1 || len(charlie) != 1 || len(david) != 1 {
 		t.Error("Unexpected data size returned")
 	}
 	if alice[0] != "Jan" || bob[0] != "Feb" ||
@@ -283,7 +283,7 @@ func TestQueryMapFirstColumnToRow2(t *testing.T) {
 		t.Error("Unexpected data returned")
 	}
 	//its important to test lengths so tests don't panic and exit early
-	if len(alice) != 2 || len(alice) != 2 || len(alice) != 2 || len(alice) != 2 {
+	if len(alice) != 2 || len(bob) != 2 || len(charlie) != 2 || len(david) != 2 {
 		t.Error("Unexpected data size returned")
 	}
 	if alice[0] != "Jan" || bob[0] != "Feb" ||
@@ -317,7 +317,7 @@ func TestBadConnection1(t *testing.T) {
 
 	_, _, err = testdb.QueryDb("SELECT * FROM people;")
 	if err != nil {
-		t.Error("failed to reconnect: %v", err)
+		t.Errorf("failed to reconnect: %v", err)
 	}
 }
 
