@@ -13,6 +13,7 @@ import (
 	"github.com/square/inspect/metrics"
 	"github.com/square/inspect/os/cpustat"
 	"github.com/square/inspect/os/diskstat"
+	"github.com/square/inspect/os/entropystat"
 	"github.com/square/inspect/os/fsstat"
 	"github.com/square/inspect/os/interfacestat"
 	"github.com/square/inspect/os/loadstat"
@@ -23,15 +24,16 @@ import (
 )
 
 type linuxStats struct {
-	osind      *Stats
-	dstat      *diskstat.DiskStat
-	fsstat     *fsstat.FSStat
-	ifstat     *interfacestat.InterfaceStat
-	netstat    *netstat.NetStat
-	cgMem      *memstat.CgroupStat
-	cgCPU      *cpustat.CgroupStat
-	loadstat   *loadstat.LoadStat
-	uptimestat *uptimestat.UptimeStat
+	osind       *Stats
+	dstat       *diskstat.DiskStat
+	fsstat      *fsstat.FSStat
+	ifstat      *interfacestat.InterfaceStat
+	netstat     *netstat.NetStat
+	cgMem       *memstat.CgroupStat
+	cgCPU       *cpustat.CgroupStat
+	loadstat    *loadstat.LoadStat
+	uptimestat  *uptimestat.UptimeStat
+	entropystat *entropystat.EntropyStat
 }
 
 // RegisterOsSpecific registers OS dependent statistics
@@ -47,6 +49,7 @@ func registerOsSpecific(m *metrics.MetricContext, step time.Duration,
 	s.uptimestat = uptimestat.New(m, step)
 	s.cgMem = memstat.NewCgroupStat(m, step)
 	s.cgCPU = cpustat.NewCgroupStat(m, step)
+	s.entropystat = entropystat.New(m, step)
 	return s
 }
 
@@ -216,4 +219,6 @@ func printOsSpecific(batchmode bool, layout *DisplayWidgets, v interface{}) {
 		}
 	}
 	displayList(batchmode, "memory(cgroup)", layout, cgmem)
+	entropy := fmt.Sprintf("%10.0f", stats.entropystat.Available.Get())
+	displayList(batchmode, "entropy", layout, []string{entropy})
 }
