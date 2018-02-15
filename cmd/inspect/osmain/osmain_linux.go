@@ -219,4 +219,6 @@ func printOsSpecific(batchmode bool, layout *DisplayWidgets, v interface{}) {
 		}
 	}
 	displayList(batchmode, "memory(cgroup)", layout, cgmem)
+	entropy := fmt.Sprintf("%10.0f", stats.entropystat.Available.Get())
+	displayList(batchmode, "entropy", layout, []string{entropy})
 }
