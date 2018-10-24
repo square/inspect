@@ -173,7 +173,7 @@ func printOsSpecific(batchmode bool, layout *DisplayWidgets, v interface{}) {
 			cpuQuotaPct := (v.Usage() / v.Quota()) * 100
 			cpuThrottle := v.Throttle() * 100
 			cgcpu = append(cgcpu, fmt.Sprintf("%20s %5s %6s %5s",
-				truncate(name, 20),
+				truncate(name, 34),
 				fmt.Sprintf("%3.1f%%", cpuUsagePct),
 				fmt.Sprintf("q:%3.1f", v.Quota()),
 				fmt.Sprintf("qpct:%3.1f%%", cpuQuotaPct)))
@@ -206,7 +206,7 @@ func printOsSpecific(batchmode bool, layout *DisplayWidgets, v interface{}) {
 			}
 			memQuotaPct := (v.Usage() / v.SoftLimit()) * 100
 			cgmem = append(cgmem, fmt.Sprintf("%20s %5s %10s %5s",
-				truncate(name, 20),
+				truncate(name, 34),
 				fmt.Sprintf("%3.1f%%", memUsagePct),
 				fmt.Sprintf("q:%8s", misc.ByteSize(memQuota)),
 				fmt.Sprintf("qpct:%3.1f%%", memQuotaPct)))
