@@ -1,6 +1,3 @@
-[![Build Status](https://travis-ci.org/square/inspect.svg?branch=master)](https://travis-ci.org/square/inspect)
-
-
 inspect is a collection of operating system/application monitoring
 analysis libraries and utilities with an emphasis on problem detection.
 
