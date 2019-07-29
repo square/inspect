@@ -223,7 +223,7 @@ const (
 	slaveBackupQuery = `
 SELECT COUNT(*) as count
   FROM information_schema.processlist
- WHERE user LIKE '%backup%';`
+ WHERE user LIKE '%bkup%';`
 	sslQuery           = "SELECT @@have_ssl;"
 	defaultMaxConns    = 5
 	readOnlyQuery      = "SELECT @@read_only;"
