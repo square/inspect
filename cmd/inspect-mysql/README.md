@@ -61,6 +61,7 @@ _inspect-mysql_ can be run in server mode to run continuously and expose all met
 	ComReplaceSelect          *metrics.Counter
 	ComRollback               *metrics.Counter
 	ComSelect                 *metrics.Counter
+	ComSetOption              *metrics.Counter
 	ComUpdate                 *metrics.Counter
 	ComUpdateMulti            *metrics.Counter
 	CreatedTmpDiskTables      *metrics.Counter

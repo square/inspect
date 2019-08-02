@@ -56,6 +56,7 @@ type MysqlStatMetrics struct {
 	ComReplaceSelect     *metrics.Counter
 	ComRollback          *metrics.Counter
 	ComSelect            *metrics.Counter
+	ComSetOption         *metrics.Counter
 	ComUpdate            *metrics.Counter
 	ComUpdateMulti       *metrics.Counter
 	CreatedTmpDiskTables *metrics.Counter
@@ -492,6 +493,7 @@ func (s *MysqlStatDBs) GetGlobalStatus() {
 		"Com_replace_select":       s.Metrics.ComReplaceSelect,
 		"Com_rollback":             s.Metrics.ComRollback,
 		"Com_select":               s.Metrics.ComSelect,
+		"Com_set_option":           s.Metrics.ComSetOption,
 		"Com_update":               s.Metrics.ComUpdate,
 		"Com_update_multi":         s.Metrics.ComUpdateMulti,
 		"Created_tmp_disk_tables":  s.Metrics.CreatedTmpDiskTables,

@@ -94,6 +94,7 @@ fmt.Println(sqltablestats.DBs["db1"].Tables["t1"].Metrics.SizeBytes.Get())
 	ComReplaceSelect          *metrics.Counter
 	ComRollback               *metrics.Counter
 	ComSelect                 *metrics.Counter
+	ComSetOption              *metrics.Counter
 	ComUpdate                 *metrics.Counter
 	ComUpdateMulti            *metrics.Counter
 	CreatedTmpDiskTables      *metrics.Counter
