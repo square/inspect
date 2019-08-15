@@ -41,6 +41,14 @@ type input_event struct {
 	err  error
 }
 
+type extract_event_res int
+
+const (
+	event_not_extracted extract_event_res = iota
+	event_extracted
+	esc_wait
+)
+
 var (
 	// term specific sequences
 	keys  []string
@@ -72,6 +80,12 @@ var (
 	input_comm     = make(chan input_event)
 	interrupt_comm = make(chan struct{})
 	intbuf         = make([]byte, 0, 16)
+
+	// grayscale indexes
+	grayscale = []Attribute{
+		0, 17, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244,
+		245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 232,
+	}
 )
 
 func write_cursor(x, y int) {
@@ -171,17 +185,17 @@ func send_attr(fg, bg Attribute) {
 	case OutputGrayscale:
 		fgcol = fg & 0x1F
 		bgcol = bg & 0x1F
-		if fgcol > 24 {
+		if fgcol > 26 {
 			fgcol = ColorDefault
 		}
-		if bgcol > 24 {
+		if bgcol > 26 {
 			bgcol = ColorDefault
 		}
 		if fgcol != ColorDefault {
-			fgcol += 0xe8
+			fgcol = grayscale[fgcol]
 		}
 		if bgcol != ColorDefault {
-			bgcol += 0xe8
+			bgcol = grayscale[bgcol]
 		}
 	default:
 		fgcol = fg & 0x0F
@@ -227,10 +241,7 @@ func send_char(x, y int, ch rune) {
 func flush() error {
 	_, err := io.Copy(out, &outbuf)
 	outbuf.Reset()
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func send_clear() error {
@@ -281,31 +292,131 @@ func tcgetattr(fd uintptr, termios *syscall_Termios) error {
 	return nil
 }
 
-func parse_escape_sequence(event *Event, buf []byte) (int, bool) {
-	bufstr := string(buf)
-	// mouse
-	if len(bufstr) >= 6 && strings.HasPrefix(bufstr, "\033[M") {
-		switch buf[3] & 3 {
+func parse_mouse_event(event *Event, buf string) (int, bool) {
+	if strings.HasPrefix(buf, "\033[M") && len(buf) >= 6 {
+		// X10 mouse encoding, the simplest one
+		// \033 [ M Cb Cx Cy
+		b := buf[3] - 32
+		switch b & 3 {
 		case 0:
-			event.Key = MouseLeft
+			if b&64 != 0 {
+				event.Key = MouseWheelUp
+			} else {
+				event.Key = MouseLeft
+			}
 		case 1:
-			event.Key = MouseMiddle
+			if b&64 != 0 {
+				event.Key = MouseWheelDown
+			} else {
+				event.Key = MouseMiddle
+			}
 		case 2:
 			event.Key = MouseRight
 		case 3:
+			event.Key = MouseRelease
+		default:
 			return 6, false
 		}
 		event.Type = EventMouse // KeyEvent by default
-		// wheel up outputs MouseLeft
-		if buf[3] == 0x60 || buf[3] == 0x70 {
-			event.Key = MouseMiddle
+		if b&32 != 0 {
+			event.Mod |= ModMotion
 		}
+
 		// the coord is 1,1 for upper left
 		event.MouseX = int(buf[4]) - 1 - 32
 		event.MouseY = int(buf[5]) - 1 - 32
 		return 6, true
+	} else if strings.HasPrefix(buf, "\033[<") || strings.HasPrefix(buf, "\033[") {
+		// xterm 1006 extended mode or urxvt 1015 extended mode
+		// xterm: \033 [ < Cb ; Cx ; Cy (M or m)
+		// urxvt: \033 [ Cb ; Cx ; Cy M
+
+		// find the first M or m, that's where we stop
+		mi := strings.IndexAny(buf, "Mm")
+		if mi == -1 {
+			return 0, false
+		}
+
+		// whether it's a capital M or not
+		isM := buf[mi] == 'M'
+
+		// whether it's urxvt or not
+		isU := false
+
+		// buf[2] is safe here, because having M or m found means we have at
+		// least 3 bytes in a string
+		if buf[2] == '<' {
+			buf = buf[3:mi]
+		} else {
+			isU = true
+			buf = buf[2:mi]
+		}
+
+		s1 := strings.Index(buf, ";")
+		s2 := strings.LastIndex(buf, ";")
+		// not found or only one ';'
+		if s1 == -1 || s2 == -1 || s1 == s2 {
+			return 0, false
+		}
+
+		n1, err := strconv.ParseInt(buf[0:s1], 10, 64)
+		if err != nil {
+			return 0, false
+		}
+		n2, err := strconv.ParseInt(buf[s1+1:s2], 10, 64)
+		if err != nil {
+			return 0, false
+		}
+		n3, err := strconv.ParseInt(buf[s2+1:], 10, 64)
+		if err != nil {
+			return 0, false
+		}
+
+		// on urxvt, first number is encoded exactly as in X10, but we need to
+		// make it zero-based, on xterm it is zero-based already
+		if isU {
+			n1 -= 32
+		}
+		switch n1 & 3 {
+		case 0:
+			if n1&64 != 0 {
+				event.Key = MouseWheelUp
+			} else {
+				event.Key = MouseLeft
+			}
+		case 1:
+			if n1&64 != 0 {
+				event.Key = MouseWheelDown
+			} else {
+				event.Key = MouseMiddle
+			}
+		case 2:
+			event.Key = MouseRight
+		case 3:
+			event.Key = MouseRelease
+		default:
+			return mi + 1, false
+		}
+		if !isM {
+			// on xterm mouse release is signaled by lowercase m
+			event.Key = MouseRelease
+		}
+
+		event.Type = EventMouse // KeyEvent by default
+		if n1&32 != 0 {
+			event.Mod |= ModMotion
+		}
+
+		event.MouseX = int(n2) - 1
+		event.MouseY = int(n3) - 1
+		return mi + 1, true
 	}
 
+	return 0, false
+}
+
+func parse_escape_sequence(event *Event, buf []byte) (int, bool) {
+	bufstr := string(buf)
 	for i, key := range keys {
 		if strings.HasPrefix(bufstr, key) {
 			event.Ch = 0
@@ -313,7 +424,9 @@ func parse_escape_sequence(event *Event, buf []byte) (int, bool) {
 			return len(key), true
 		}
 	}
-	return 0, true
+
+	// if none of the keys match, let's try mouse sequences
+	return parse_mouse_event(event, bufstr)
 }
 
 func extract_raw_event(data []byte, event *Event) bool {
@@ -335,18 +448,27 @@ func extract_raw_event(data []byte, event *Event) bool {
 	return true
 }
 
-func extract_event(inbuf []byte, event *Event) bool {
+func extract_event(inbuf []byte, event *Event, allow_esc_wait bool) extract_event_res {
 	if len(inbuf) == 0 {
 		event.N = 0
-		return false
+		return event_not_extracted
 	}
 
 	if inbuf[0] == '\033' {
 		// possible escape sequence
-		n, ok := parse_escape_sequence(event, inbuf)
-		if n != 0 {
+		if n, ok := parse_escape_sequence(event, inbuf); n != 0 {
 			event.N = n
-			return ok
+			if ok {
+				return event_extracted
+			} else {
+				return event_not_extracted
+			}
+		}
+
+		// possible partially read escape sequence; trigger a wait if appropriate
+		if enable_wait_for_escape_sequence() && allow_esc_wait {
+			event.N = 0
+			return esc_wait
 		}
 
 		// it's not escape sequence, then it's Alt or Esc, check input_mode
@@ -357,17 +479,17 @@ func extract_event(inbuf []byte, event *Event) bool {
 			event.Key = KeyEsc
 			event.Mod = 0
 			event.N = 1
-			return true
+			return event_extracted
 		case input_mode&InputAlt != 0:
 			// if we're in alt mode, set Alt modifier to event and redo parsing
 			event.Mod = ModAlt
-			ok := extract_event(inbuf[1:], event)
-			if ok {
+			status := extract_event(inbuf[1:], event, false)
+			if status == event_extracted {
 				event.N++
 			} else {
 				event.N = 0
 			}
-			return ok
+			return status
 		default:
 			panic("unreachable")
 		}
@@ -382,7 +504,7 @@ func extract_event(inbuf []byte, event *Event) bool {
 		event.Ch = 0
 		event.Key = Key(inbuf[0])
 		event.N = 1
-		return true
+		return event_extracted
 	}
 
 	// the only possible option is utf8 rune
@@ -390,10 +512,10 @@ func extract_event(inbuf []byte, event *Event) bool {
 		event.Ch = r
 		event.Key = 0
 		event.N = n
-		return true
+		return event_extracted
 	}
 
-	return false
+	return event_not_extracted
 }
 
 func fcntl(fd int, cmd int, arg int) (val int, err error) {

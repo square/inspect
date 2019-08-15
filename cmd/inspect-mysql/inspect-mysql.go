@@ -13,8 +13,7 @@ import (
 	"os"
 	"time"
 
-	"code.google.com/p/goconf/conf"
-
+	"github.com/square/inspect/conf"
 	"github.com/square/inspect/metricchecks"
 	"github.com/square/inspect/metrics"
 	"github.com/square/inspect/mysql/dbstat"

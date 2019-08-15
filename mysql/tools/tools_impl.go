@@ -16,8 +16,8 @@ import (
 	"strconv"
 	"strings"
 
-	"code.google.com/p/goconf/conf"    // used for parsing config files
 	_ "github.com/go-sql-driver/mysql" // mysql driver
+	"github.com/square/inspect/conf"   // used for parsing config files
 )
 
 type mysqlDB struct {

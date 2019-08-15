@@ -23,6 +23,8 @@ import (
 const (
 	ti_magic         = 0432
 	ti_header_length = 12
+	ti_mouse_enter   = "\x1b[?1000h\x1b[?1002h\x1b[?1015h\x1b[?1006h"
+	ti_mouse_leave   = "\x1b[?1006l\x1b[?1015l\x1b[?1002l\x1b[?1000l"
 )
 
 func load_terminfo() ([]byte, error) {
@@ -65,6 +67,12 @@ func load_terminfo() ([]byte, error) {
 				return data, nil
 			}
 		}
+	}
+
+	// next, /lib/terminfo
+	data, err = ti_try_path("/lib/terminfo")
+	if err == nil {
+		return data, nil
 	}
 
 	// fall back to /usr/share/terminfo
@@ -149,11 +157,16 @@ func setup_term() (err error) {
 		return
 	}
 
+	number_sec_len := int16(2)
+	if header[0] == 542 { // doc says it should be octal 0542, but what I see it terminfo files is 542, learn to program please... thank you..
+		number_sec_len = 4
+	}
+
 	if (header[1]+header[2])%2 != 0 {
 		// old quirk to align everything on word boundaries
 		header[2] += 1
 	}
-	str_offset = ti_header_length + header[1] + header[2] + 2*header[3]
+	str_offset = ti_header_length + header[1] + header[2] + number_sec_len*header[3]
 	table_offset = str_offset + 2*header[4]
 
 	keys = make([]string, 0xFFFF-key_min)
@@ -172,8 +185,8 @@ func setup_term() (err error) {
 			return
 		}
 	}
-	funcs[t_max_funcs-2] = "\x1b[?1000h"
-	funcs[t_max_funcs-1] = "\x1b[?1000l"
+	funcs[t_max_funcs-2] = ti_mouse_enter
+	funcs[t_max_funcs-1] = ti_mouse_leave
 	return nil
 }
 
