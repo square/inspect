@@ -1,0 +1,1 @@
+This is a copy of the files from code.google.com/p/goconf/conf that inspect depends upon. code.google.com/p/goconf/conf does not exist anymore, and is causing a lot of problems with vendoring. Our options are to keep a local copy here (not a big deal because it's not much code), or update inspect to no longer use this package (don't have time for that right now).

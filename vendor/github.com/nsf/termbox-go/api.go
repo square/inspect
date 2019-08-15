@@ -8,6 +8,7 @@ import "os"
 import "os/signal"
 import "syscall"
 import "runtime"
+import "time"
 
 // public API
 
@@ -23,13 +24,21 @@ import "runtime"
 func Init() error {
 	var err error
 
-	out, err = os.OpenFile("/dev/tty", syscall.O_WRONLY, 0)
-	if err != nil {
-		return err
-	}
-	in, err = syscall.Open("/dev/tty", syscall.O_RDONLY, 0)
-	if err != nil {
-		return err
+	if runtime.GOOS == "openbsd" {
+		out, err = os.OpenFile("/dev/tty", os.O_RDWR, 0)
+		if err != nil {
+			return err
+		}
+		in = int(out.Fd())
+	} else {
+		out, err = os.OpenFile("/dev/tty", os.O_WRONLY, 0)
+		if err != nil {
+			return err
+		}
+		in, err = syscall.Open("/dev/tty", syscall.O_RDONLY, 0)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = setup_term()
@@ -57,7 +66,6 @@ func Init() error {
 	tios.Iflag &^= syscall_IGNBRK | syscall_BRKINT | syscall_PARMRK |
 		syscall_ISTRIP | syscall_INLCR | syscall_IGNCR |
 		syscall_ICRNL | syscall_IXON
-	tios.Oflag &^= syscall_OPOST
 	tios.Lflag &^= syscall_ECHO | syscall_ECHONL | syscall_ICANON |
 		syscall_ISIG | syscall_IEXTEN
 	tios.Cflag &^= syscall_CSIZE | syscall_PARENB
@@ -254,8 +262,8 @@ func CellBuffer() []Cell {
 // NOTE: This API is experimental and may change in future.
 func ParseEvent(data []byte) Event {
 	event := Event{Type: EventKey}
-	ok := extract_event(data, &event)
-	if !ok {
+	status := extract_event(data, &event, false)
+	if status != event_extracted {
 		return Event{Type: EventNone, N: event.N}
 	}
 	return event
@@ -304,34 +312,65 @@ func PollRawEvent(data []byte) Event {
 
 // Wait for an event and return it. This is a blocking function call.
 func PollEvent() Event {
+	// Constant governing macOS specific behavior. See https://github.com/nsf/termbox-go/issues/132
+	// This is an arbitrary delay which hopefully will be enough time for any lagging
+	// partial escape sequences to come through.
+	const esc_wait_delay = 100 * time.Millisecond
+
 	var event Event
+	var esc_wait_timer *time.Timer
+	var esc_timeout <-chan time.Time
 
 	// try to extract event from input buffer, return on success
 	event.Type = EventKey
-	ok := extract_event(inbuf, &event)
+	status := extract_event(inbuf, &event, true)
 	if event.N != 0 {
 		copy(inbuf, inbuf[event.N:])
 		inbuf = inbuf[:len(inbuf)-event.N]
 	}
-	if ok {
+	if status == event_extracted {
 		return event
+	} else if status == esc_wait {
+		esc_wait_timer = time.NewTimer(esc_wait_delay)
+		esc_timeout = esc_wait_timer.C
 	}
 
 	for {
 		select {
 		case ev := <-input_comm:
+			if esc_wait_timer != nil {
+				if !esc_wait_timer.Stop() {
+					<-esc_wait_timer.C
+				}
+				esc_wait_timer = nil
+			}
+
 			if ev.err != nil {
 				return Event{Type: EventError, Err: ev.err}
 			}
 
 			inbuf = append(inbuf, ev.data...)
 			input_comm <- ev
-			ok := extract_event(inbuf, &event)
+			status := extract_event(inbuf, &event, true)
 			if event.N != 0 {
 				copy(inbuf, inbuf[event.N:])
 				inbuf = inbuf[:len(inbuf)-event.N]
 			}
-			if ok {
+			if status == event_extracted {
+				return event
+			} else if status == esc_wait {
+				esc_wait_timer = time.NewTimer(esc_wait_delay)
+				esc_timeout = esc_wait_timer.C
+			}
+		case <-esc_timeout:
+			esc_wait_timer = nil
+
+			status := extract_event(inbuf, &event, false)
+			if event.N != 0 {
+				copy(inbuf, inbuf[event.N:])
+				inbuf = inbuf[:len(inbuf)-event.N]
+			}
+			if status == event_extracted {
 				return event
 			}
 		case <-interrupt_comm:
@@ -344,14 +383,13 @@ func PollEvent() Event {
 			return event
 		}
 	}
-	panic("unreachable")
 }
 
 // Returns the size of the internal back buffer (which is mostly the same as
 // terminal's window size in characters). But it doesn't always match the size
 // of the terminal window, after the terminal size has changed, the internal
 // back buffer will get in sync only after Clear or Flush function calls.
-func Size() (int, int) {
+func Size() (width int, height int) {
 	return termw, termh
 }
 
@@ -372,13 +410,19 @@ func Clear(fg, bg Attribute) error {
 // any known sequence. ESC enables ModAlt modifier for the next keyboard event.
 //
 // Both input modes can be OR'ed with Mouse mode. Setting Mouse mode bit up will
-// enable mouse button click events.
+// enable mouse button press/release and drag events.
 //
 // If 'mode' is InputCurrent, returns the current input mode. See also Input*
 // constants.
 func SetInputMode(mode InputMode) InputMode {
 	if mode == InputCurrent {
 		return input_mode
+	}
+	if mode&(InputEsc|InputAlt) == 0 {
+		mode |= InputEsc
+	}
+	if mode&(InputEsc|InputAlt) == InputEsc|InputAlt {
+		mode &^= InputAlt
 	}
 	if mode&InputMouse != 0 {
 		out.WriteString(funcs[t_enter_mouse])
@@ -391,6 +435,7 @@ func SetInputMode(mode InputMode) InputMode {
 }
 
 // Sets the termbox output mode. Termbox has four output options:
+//
 // 1. OutputNormal => [1..8]
 //    This mode provides 8 different colors:
 //        black, red, green, yellow, blue, magenta, cyan, white
@@ -402,10 +447,10 @@ func SetInputMode(mode InputMode) InputMode {
 //
 // 2. Output256 => [1..256]
 //    In this mode you can leverage the 256 terminal mode:
-//    0x00 - 0x07: the 8 colors as in OutputNormal
-//    0x08 - 0x0f: Color* | AttrBold
-//    0x10 - 0xe7: 216 different colors
-//    0xe8 - 0xff: 24 different shades of grey
+//    0x01 - 0x08: the 8 colors as in OutputNormal
+//    0x09 - 0x10: Color* | AttrBold
+//    0x11 - 0xe8: 216 different colors
+//    0xe9 - 0x1ff: 24 different shades of grey
 //
 //    Example usage:
 //        SetCell(x, y, '@', 184, 240);
@@ -413,13 +458,14 @@ func SetInputMode(mode InputMode) InputMode {
 //
 // 3. Output216 => [1..216]
 //    This mode supports the 3rd range of the 256 mode only.
-//    But you dont need to provide an offset.
+//    But you don't need to provide an offset.
 //
-// 4. OutputGrayscale => [1..24]
-//    This mode supports the 4th range of the 256 mode only.
-//    But you dont need to provide an offset.
+// 4. OutputGrayscale => [1..26]
+//    This mode supports the 4th range of the 256 mode
+//    and black and white colors from 3th range of the 256 mode
+//    But you don't need to provide an offset.
 //
-// In all modes, 0 represents the default color.
+// In all modes, 0x00 represents the default color.
 //
 // `go run _demos/output.go` to see its impact on your terminal.
 //
