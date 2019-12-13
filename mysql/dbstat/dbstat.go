@@ -573,10 +573,10 @@ func (s *MysqlStatDBs) FlushQueryResponseTime() error {
 	var flushquery string
 	version := strconv.FormatFloat(s.Metrics.Version.Get(), 'f', -1, 64)[0:3]
 
-	switch {
-	case version == "5.6":
+	switch version {
+	case "5.6", "5.7":
 		flushquery = "SET GLOBAL query_response_time_flush=1"
-	case version == "5.5":
+	case "5.5":
 		flushquery = "FLUSH NO_WRITE_TO_BINLOG QUERY_RESPONSE_TIME"
 	default:
 		err := fmt.Errorf("Version unsupported: %s", version)
