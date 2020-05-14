@@ -28,6 +28,7 @@ type MysqlStatDBs struct {
 	Metrics        *MysqlStatMetrics //collection of metrics
 	MasterHostname string
 	slaveLagTable  string // table for reading timestamps, of the form "database.table"
+	slaveLagQuery  string // mysql query for replication lag
 }
 
 // MysqlStatMetrics represents metrics being collected about the server/database
@@ -256,7 +257,7 @@ func New(m *metrics.MetricContext, user, password, host, config string, options 
 	if slavelagTable, ok := options["slavelagtable"]; ok {
 		if slavelagCol, ok := options["slavelagcolumn"]; ok {
 			s.slaveLagTable = slavelagTable
-			slaveLagQuery = fmt.Sprintf(slaveLagQuery, slavelagCol, slavelagTable)
+			s.slaveLagQuery = fmt.Sprintf(slaveLagQuery, slavelagCol, slavelagTable)
 		}
 	}
 
@@ -359,7 +360,7 @@ func (s *MysqlStatDBs) GetSlaveLag() {
 		s.Db.Log(errors.New("No slave lag table specified."))
 		return
 	}
-	res, err := s.Db.QueryReturnColumnDict(slaveLagQuery)
+	res, err := s.Db.QueryReturnColumnDict(s.slaveLagQuery)
 	if err != nil {
 		s.Db.Log(err)
 		return
