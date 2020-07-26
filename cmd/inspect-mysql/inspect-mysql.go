@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	var user, password, host, address, cnf, form, checkConfigFile, slavelagtable, slavelagcol string
+	var user, password, host, address, cnf, form, checkConfigFile, subordinatelagtable, subordinatelagcol string
 	var stepSec int
 	var servermode, human, loop bool
 	var checkConfig *conf.ConfigFile
@@ -44,8 +44,8 @@ func main() {
 		"Makes output in MB for human readable sizes")
 	flag.BoolVar(&loop, "loop", false, "loop on collecting metrics")
 	flag.StringVar(&checkConfigFile, "check", "", "config file to check metrics with")
-	flag.StringVar(&slavelagtable, "slavelagtable", "", "name of the table \"database.table\" that holds slave lag timestamps")
-	flag.StringVar(&slavelagcol, "slavelagcolumn", "", "name of column in slavelagtable that holds the timestamps")
+	flag.StringVar(&subordinatelagtable, "subordinatelagtable", "", "name of the table \"database.table\" that holds subordinate lag timestamps")
+	flag.StringVar(&subordinatelagcol, "subordinatelagcolumn", "", "name of column in subordinatelagtable that holds the timestamps")
 	flag.Parse()
 
 	if servermode {
@@ -73,8 +73,8 @@ func main() {
 		checkConfigFile = ""
 	}
 	options := map[string]string{
-		"slavelagtable":  slavelagtable,
-		"slavelagcolumn": slavelagcol,
+		"subordinatelagtable":  subordinatelagtable,
+		"subordinatelagcolumn": subordinatelagcol,
 	}
 
 	//initialize metrics collectors to not loop and collect

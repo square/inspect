@@ -104,7 +104,7 @@ func initMysqlStatDBs() *MysqlStatDBs {
 		Logger: log.New(os.Stderr, "TESTING LOG: ", log.Lshortfile),
 	}
 	s.Metrics = MysqlStatMetricsNew(metrics.NewMetricContext("system"))
-	slaveLagQuery = "SELECT max(%s) AS TIMESTAMP from %s"
+	subordinateLagQuery = "SELECT max(%s) AS TIMESTAMP from %s"
 
 	// Have test function now() always return 2016-05-20 15:21:45.65432 UTC
 	now = func() time.Time {
@@ -152,13 +152,13 @@ func TestBasic(t *testing.T) {
 
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
-		//getSlaveStats()
-		slaveQuery: map[string][]string{
-			"Seconds_Behind_Master": []string{"8"},
-			"Relay_Master_Log_File": []string{"some-name-bin.010"},
-			"Exec_Master_Log_Pos":   []string{"79"},
+		//getSubordinateStats()
+		subordinateQuery: map[string][]string{
+			"Seconds_Behind_Main": []string{"8"},
+			"Relay_Main_Log_File": []string{"some-name-bin.010"},
+			"Exec_Main_Log_Pos":   []string{"79"},
 			"Relay_Log_Space":       []string{"123"},
-			"Master_Host":           []string{"abcdef"},
+			"Main_Host":           []string{"abcdef"},
 		},
 		//getOldest
 		oldestQuery: map[string][]string{
@@ -211,9 +211,9 @@ func TestBasic(t *testing.T) {
 	}}
 	//expected results
 	expectedValues = map[interface{}]interface{}{
-		s.Metrics.SlaveSecondsBehindMaster: float64(8),
-		s.Metrics.SlaveSeqFile:             float64(10),
-		s.Metrics.SlavePosition:            uint64(79),
+		s.Metrics.SubordinateSecondsBehindMain: float64(8),
+		s.Metrics.SubordinateSeqFile:             float64(10),
+		s.Metrics.SubordinatePosition:            uint64(79),
 		s.Metrics.RelayLogSpace:            float64(123),
 		s.Metrics.Queries:                  uint64(8),
 		s.Metrics.Uptime:                   uint64(100),
@@ -245,8 +245,8 @@ func TestBasic(t *testing.T) {
 		t.Error(err)
 	}
 
-	if s.MasterHostname != "abcdef" {
-		t.Error("MasterHost: expect abcdef, got " + s.MasterHostname)
+	if s.MainHostname != "abcdef" {
+		t.Error("MainHost: expect abcdef, got " + s.MainHostname)
 	}
 }
 
@@ -356,27 +356,27 @@ func TestSessions(t *testing.T) {
 	}
 }
 
-// Test basic parsing of slave info query
-func TestSlave1(t *testing.T) {
+// Test basic parsing of subordinate info query
+func TestSubordinate1(t *testing.T) {
 	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
-		//getSlaveStats()
-		slaveQuery: map[string][]string{
-			"Seconds_Behind_Master": []string{"80"},
-			"Relay_Master_Log_File": []string{"some-name-bin.01345"},
-			"Exec_Master_Log_Pos":   []string{"7"},
+		//getSubordinateStats()
+		subordinateQuery: map[string][]string{
+			"Seconds_Behind_Main": []string{"80"},
+			"Relay_Main_Log_File": []string{"some-name-bin.01345"},
+			"Exec_Main_Log_Pos":   []string{"7"},
 			"Relay_Log_Space":       []string{"2"},
 		},
-		slaveBackupQuery: map[string][]string{
+		subordinateBackupQuery: map[string][]string{
 			"count": []string{"0"},
 		},
 	}
 	expectedValues = map[interface{}]interface{}{
-		s.Metrics.SlaveSecondsBehindMaster: float64(80),
-		s.Metrics.SlaveSeqFile:             float64(1345),
-		s.Metrics.SlavePosition:            uint64(7),
+		s.Metrics.SubordinateSecondsBehindMain: float64(80),
+		s.Metrics.SubordinateSeqFile:             float64(1345),
+		s.Metrics.SubordinatePosition:            uint64(7),
 		s.Metrics.ReplicationRunning:       float64(1),
 		s.Metrics.RelayLogSpace:            float64(2),
 	}
@@ -387,32 +387,32 @@ func TestSlave1(t *testing.T) {
 		t.Error(err)
 	}
 
-	if s.MasterHostname != "" {
-		t.Error("MasterHost: Expect empty string, got " + s.MasterHostname)
+	if s.MainHostname != "" {
+		t.Error("MainHost: Expect empty string, got " + s.MainHostname)
 	}
 }
 
-// Test when slave is down and backup isn't running
-func TestSlave2(t *testing.T) {
+// Test when subordinate is down and backup isn't running
+func TestSubordinate2(t *testing.T) {
 	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
-		//getSlaveStats()
-		slaveQuery: map[string][]string{
-			"Seconds_Behind_Master": []string{"NULL"},
-			"Relay_Master_Log_File": []string{"some.name.bin.01345"},
-			"Exec_Master_Log_Pos":   []string{"7"},
+		//getSubordinateStats()
+		subordinateQuery: map[string][]string{
+			"Seconds_Behind_Main": []string{"NULL"},
+			"Relay_Main_Log_File": []string{"some.name.bin.01345"},
+			"Exec_Main_Log_Pos":   []string{"7"},
 			"Relay_Log_Space":       []string{"0"},
 		},
-		slaveBackupQuery: map[string][]string{
+		subordinateBackupQuery: map[string][]string{
 			"count": []string{"0"},
 		},
 	}
 	expectedValues = map[interface{}]interface{}{
-		s.Metrics.SlaveSecondsBehindMaster: float64(-1),
-		s.Metrics.SlaveSeqFile:             float64(1345),
-		s.Metrics.SlavePosition:            uint64(7),
+		s.Metrics.SubordinateSecondsBehindMain: float64(-1),
+		s.Metrics.SubordinateSeqFile:             float64(1345),
+		s.Metrics.SubordinatePosition:            uint64(7),
 		s.Metrics.ReplicationRunning:       float64(-1),
 		s.Metrics.RelayLogSpace:            float64(0),
 	}
@@ -424,27 +424,27 @@ func TestSlave2(t *testing.T) {
 	}
 }
 
-// Test when slave is down and backup is running
-func TestSlave3(t *testing.T) {
+// Test when subordinate is down and backup is running
+func TestSubordinate3(t *testing.T) {
 	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
 	//set desired test output
 	testquerycol = map[string]map[string][]string{
-		//getSlaveStats()
-		slaveQuery: map[string][]string{
-			"Seconds_Behind_Master": []string{"NULL"},
-			"Relay_Master_Log_File": []string{"some.name.bin.01345"},
-			"Exec_Master_Log_Pos":   []string{"7"},
+		//getSubordinateStats()
+		subordinateQuery: map[string][]string{
+			"Seconds_Behind_Main": []string{"NULL"},
+			"Relay_Main_Log_File": []string{"some.name.bin.01345"},
+			"Exec_Main_Log_Pos":   []string{"7"},
 			"Relay_Log_Space":       []string{"0"},
 		},
-		slaveBackupQuery: map[string][]string{
+		subordinateBackupQuery: map[string][]string{
 			"count": []string{"1"},
 		},
 	}
 	expectedValues = map[interface{}]interface{}{
-		s.Metrics.SlaveSecondsBehindMaster: float64(-1),
-		s.Metrics.SlaveSeqFile:             float64(1345),
-		s.Metrics.SlavePosition:            uint64(7),
+		s.Metrics.SubordinateSecondsBehindMain: float64(-1),
+		s.Metrics.SubordinateSeqFile:             float64(1345),
+		s.Metrics.SubordinatePosition:            uint64(7),
 		s.Metrics.ReplicationRunning:       float64(1),
 		s.Metrics.RelayLogSpace:            float64(0),
 	}
@@ -456,23 +456,23 @@ func TestSlave3(t *testing.T) {
 	}
 }
 
-// Test that a slave lag table can be queried correctly
-func TestSlaveLagTable(t *testing.T) {
+// Test that a subordinate lag table can be queried correctly
+func TestSubordinateLagTable(t *testing.T) {
 	s := initMysqlStatDBs()
 
-	s.slaveLagTable = "test-dbadmin-table"
-	slaveLagQuery = "SELECT max(ts) AS TIMESTAMP from test-dbadmin-table"
+	s.subordinateLagTable = "test-dbadmin-table"
+	subordinateLagQuery = "SELECT max(ts) AS TIMESTAMP from test-dbadmin-table"
 	testquerycol = map[string]map[string][]string{
-		slaveLagQuery: map[string][]string{
+		subordinateLagQuery: map[string][]string{
 			"TIMESTAMP": []string{"2016-05-20 15:21:46.00000"},
 		},
 	}
-	s.GetSlaveLag()
+	s.GetSubordinateLag()
 	timestamp := time.Date(2016, time.May, 20, 15, 21, 46, 00000000, time.UTC)
 	timeDiff := now().Sub(timestamp)
 
 	expectedValues = map[interface{}]interface{}{
-		s.Metrics.SlaveSecondsBehindMaster: timeDiff.Seconds(),
+		s.Metrics.SubordinateSecondsBehindMain: timeDiff.Seconds(),
 	}
 	err := checkResults()
 	if err != "" {
