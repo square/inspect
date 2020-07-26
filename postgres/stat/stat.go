@@ -78,18 +78,18 @@ type PostgresStatMetrics struct {
 	BackupsRunning       *metrics.Gauge
 	BinlogFiles          *metrics.Gauge
 	DBSizeBinlogs        *metrics.Gauge
-	SecondsBehindMaster  *metrics.Gauge
-	SlavesConnectedToMe  *metrics.Gauge
+	SecondsBehindMain  *metrics.Gauge
+	SubordinatesConnectedToMe  *metrics.Gauge
 	VacuumsAutoRunning   *metrics.Gauge
 	VacuumsManualRunning *metrics.Gauge
-	SlaveBytesBehindMe   *metrics.Gauge
+	SubordinateBytesBehindMe   *metrics.Gauge
 }
 
 //store all sql commands here
 const (
 	uptimeQuery = `
   SELECT EXTRACT(epoch FROM now())
-       - EXTRACT(epoch From pg_postmaster_start_time()) AS uptime;`
+       - EXTRACT(epoch From pg_postmain_start_time()) AS uptime;`
 	versionQuery     = "SELECT VERSION() AS version;"
 	tpsQuery         = "SELECT SUM(xact_commit + xact_rollback) AS tps FROM pg_stat_database;"
 	cacheInfoQuery   = "SELECT SUM(blks_read) AS block_reads_disk, SUM(blks_hit) AS block_reads_cache FROM pg_stat_database;"
@@ -148,7 +148,7 @@ const (
              AND C.relkind <> 'i'
              AND nspname !~ '^pg_toast'
            ORDER BY pg_total_relation_size(C.oid) DESC;`
-	secondsBehindMasterQuery = `
+	secondsBehindMainQuery = `
         SELECT EXTRACT(epoch FROM NOW()) 
              - EXTRACT(epoch FROM pg_last_xact_replay_timestamp()) AS seconds;`
 	delayBytesQuery = `
@@ -249,8 +249,8 @@ func (s *PostgresStat) Collect() {
 	go s.getVacuumsInProgress()
 	go s.getMainProcessInfo()
 	go s.getSizes()
-	go s.getSecondsBehindMaster()
-	go s.getSlaveDelayBytes()
+	go s.getSecondsBehindMain()
+	go s.getSubordinateDelayBytes()
 	go s.getSecurity()
 	go s.getBackups()
 	go s.getWriteability()
@@ -609,7 +609,7 @@ func (s *PostgresStat) getMainProcessInfo() {
 		}
 		cmd := strings.Join(words[10:], " ")
 
-		if strings.Contains(cmd, "postmaster") {
+		if strings.Contains(cmd, "postmain") {
 			info := make([]string, 10)
 			//mapping for info: 0-user, 1-pid, 2-cpu, 3-mem, 4-vsz, 5-rss, 6-tty, 7-stat, 8-start, 9-time, 10-cmd
 			for i, word := range words {
@@ -777,11 +777,11 @@ func (s *PostgresStat) getBackups() {
 }
 
 //get seconds
-func (s *PostgresStat) getSecondsBehindMaster() {
+func (s *PostgresStat) getSecondsBehindMain() {
 	recoveryConfFile := s.PGDATA + "/recovery.conf"
 	recoveryDoneFile := s.PGDATA + "/recovery.done"
 
-	res, err := s.db.QueryReturnColumnDict(secondsBehindMasterQuery)
+	res, err := s.db.QueryReturnColumnDict(secondsBehindMainQuery)
 	if err != nil {
 		s.db.Log(err)
 		s.wg.Done()
@@ -789,12 +789,12 @@ func (s *PostgresStat) getSecondsBehindMaster() {
 	}
 	v, ok := res["seconds"]
 	if !ok || len(v) == 0 {
-		s.db.Log(errors.New("Unable to get seconds behind master"))
+		s.db.Log(errors.New("Unable to get seconds behind main"))
 		s.wg.Done()
 		return
 	}
 	if res["seconds"][0] == "" {
-		s.Metrics.SecondsBehindMaster.Set(float64(0)) // or -1?
+		s.Metrics.SecondsBehindMain.Set(float64(0)) // or -1?
 		s.wg.Done()
 		return
 	}
@@ -804,21 +804,21 @@ func (s *PostgresStat) getSecondsBehindMaster() {
 		s.wg.Done()
 		return
 	}
-	s.Metrics.SecondsBehindMaster.Set(float64(seconds))
+	s.Metrics.SecondsBehindMain.Set(float64(seconds))
 	_, confErr := os.Stat(recoveryConfFile)
 	if confErr == nil {
-		s.Metrics.SecondsBehindMaster.Set(float64(-1))
+		s.Metrics.SecondsBehindMain.Set(float64(-1))
 	}
 	_, doneErr := os.Stat(recoveryDoneFile)
 	if doneErr == nil && os.IsNotExist(confErr) {
-		s.Metrics.SecondsBehindMaster.Set(float64(-1))
+		s.Metrics.SecondsBehindMain.Set(float64(-1))
 	}
 	s.wg.Done()
 	return
 }
 
-//get bytes slave is behind master
-func (s *PostgresStat) getSlaveDelayBytes() {
+//get bytes subordinate is behind main
+func (s *PostgresStat) getSubordinateDelayBytes() {
 
 	res, err := s.db.QueryReturnColumnDict(delayBytesQuery)
 	if err != nil {
@@ -826,33 +826,33 @@ func (s *PostgresStat) getSlaveDelayBytes() {
 		s.wg.Done()
 		return
 	}
-	s.Metrics.SlavesConnectedToMe.Set(float64(len(res["client_hostname"])))
+	s.Metrics.SubordinatesConnectedToMe.Set(float64(len(res["client_hostname"])))
 	for _, val := range res["pg_current_xlog_location"] {
 		str := strings.Split(val, "/")
 		if len(str) < 2 {
-			s.db.Log(errors.New("Can't get slave delay bytes"))
+			s.db.Log(errors.New("Can't get subordinate delay bytes"))
 			s.wg.Done()
 			return
 		}
-		var masterFile, masterPos, slaveFile, slavePos int64
-		masterFile, err = strconv.ParseInt(str[0], 16, 64)
+		var mainFile, mainPos, subordinateFile, subordinatePos int64
+		mainFile, err = strconv.ParseInt(str[0], 16, 64)
 
-		masterPos, err = strconv.ParseInt(str[1], 16, 64)
+		mainPos, err = strconv.ParseInt(str[1], 16, 64)
 
 		str2 := strings.Split(res["write_location"][0], "/")
 		if len(str2) < 2 {
-			s.db.Log(errors.New("Can't get slave delay bytes"))
+			s.db.Log(errors.New("Can't get subordinate delay bytes"))
 			s.wg.Done()
 			return
 		}
-		slaveFile, err = strconv.ParseInt(str2[0], 16, 64)
+		subordinateFile, err = strconv.ParseInt(str2[0], 16, 64)
 
-		slavePos, err = strconv.ParseInt(str2[1], 16, 64)
+		subordinatePos, err = strconv.ParseInt(str2[1], 16, 64)
 
 		segmentSize, _ := strconv.ParseInt("0xFFFFFFFF", 0, 64)
 
-		r := ((masterFile * segmentSize) + masterPos) - ((slaveFile * segmentSize) + slavePos)
-		s.Metrics.SlaveBytesBehindMe.Set(float64(r))
+		r := ((mainFile * segmentSize) + mainPos) - ((subordinateFile * segmentSize) + subordinatePos)
+		s.Metrics.SubordinateBytesBehindMe.Set(float64(r))
 	}
 	if err != nil {
 		s.db.Log(err)

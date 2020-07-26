@@ -26,17 +26,17 @@ import (
 type MysqlStatDBs struct {
 	util.MysqlStat
 	Metrics        *MysqlStatMetrics //collection of metrics
-	MasterHostname string
-	slaveLagTable  string // table for reading timestamps, of the form "database.table"
-	slaveLagQuery  string // mysql query for replication lag
+	MainHostname string
+	subordinateLagTable  string // table for reading timestamps, of the form "database.table"
+	subordinateLagQuery  string // mysql query for replication lag
 }
 
 // MysqlStatMetrics represents metrics being collected about the server/database
 type MysqlStatMetrics struct {
-	//GetSlave Stats
-	SlaveSecondsBehindMaster *metrics.Gauge
-	SlaveSeqFile             *metrics.Gauge
-	SlavePosition            *metrics.Counter
+	//GetSubordinate Stats
+	SubordinateSecondsBehindMain *metrics.Gauge
+	SubordinateSeqFile             *metrics.Gauge
+	SubordinatePosition            *metrics.Counter
 	ReplicationRunning       *metrics.Gauge
 	RelayLogSpace            *metrics.Gauge
 
@@ -181,7 +181,7 @@ type MysqlStatMetrics struct {
 }
 
 const (
-	slaveQuery  = "SHOW SLAVE STATUS;"
+	subordinateQuery  = "SHOW SLAVE STATUS;"
 	oldestQuery = `
  SELECT time FROM information_schema.processlist
   WHERE command NOT IN ('Sleep','Connect','Binlog Dump','Binlog Dump GTID')
@@ -215,13 +215,13 @@ const (
 	sessionQuery1 = "SELECT @@GLOBAL.max_connections;"
 	sessionQuery2 = `
     SELECT IF(command LIKE 'Sleep',1,0) +
-           IF(state LIKE '%master%' OR state LIKE '%slave%',1,0) AS sort_col,
+           IF(state LIKE '%main%' OR state LIKE '%subordinate%',1,0) AS sort_col,
            processlist.*
       FROM information_schema.processlist
      ORDER BY 1, time DESC;`
 	innodbQuery      = "SHOW GLOBAL VARIABLES LIKE 'innodb_log_file_size';"
 	securityQuery    = "SELECT COUNT(*) FROM mysql.user WHERE (password = '' OR password IS NULL) AND (x509_subject='' OR x509_subject IS NULL);"
-	slaveBackupQuery = `
+	subordinateBackupQuery = `
 SELECT COUNT(*) as count
   FROM information_schema.processlist
  WHERE user LIKE '%bkup%';`
@@ -232,7 +232,7 @@ SELECT COUNT(*) as count
 )
 
 var (
-	slaveLagQuery = "SELECT max(%s) AS TIMESTAMP from %s"
+	subordinateLagQuery = "SELECT max(%s) AS TIMESTAMP from %s"
 	now           = func() time.Time { return time.Now() }
 )
 
@@ -254,10 +254,10 @@ func New(m *metrics.MetricContext, user, password, host, config string, options 
 	s.Metrics = MysqlStatMetricsNew(m)
 
 	// If the user specifies a separate table to gather replication lag from
-	if slavelagTable, ok := options["slavelagtable"]; ok {
-		if slavelagCol, ok := options["slavelagcolumn"]; ok {
-			s.slaveLagTable = slavelagTable
-			s.slaveLagQuery = fmt.Sprintf(slaveLagQuery, slavelagCol, slavelagTable)
+	if subordinatelagTable, ok := options["subordinatelagtable"]; ok {
+		if subordinatelagCol, ok := options["subordinatelagcolumn"]; ok {
+			s.subordinateLagTable = subordinatelagTable
+			s.subordinateLagQuery = fmt.Sprintf(subordinateLagQuery, subordinatelagCol, subordinatelagTable)
 		}
 	}
 
@@ -279,7 +279,7 @@ func (s *MysqlStatDBs) Collect() {
 	s.GetVersion()
 
 	var queryFuncList = []func(){
-		s.GetSlaveStats,
+		s.GetSubordinateStats,
 		s.GetGlobalStatus,
 		s.GetBinlogStats,
 		s.GetStackedQueries,
@@ -353,20 +353,20 @@ func (s *MysqlStatDBs) GetQueriesPerSecond() {
 	s.Metrics.QueriesPerSecond.Set(queriesPerSecond)
 }
 
-// GetSlaveLag determines replication lag by querying for the latest timestamp
+// GetSubordinateLag determines replication lag by querying for the latest timestamp
 // in a heartbeat table. (Similar to the table used in pt-heartbeat).
-func (s *MysqlStatDBs) GetSlaveLag() {
-	if s.slaveLagTable == "" {
-		s.Db.Log(errors.New("No slave lag table specified."))
+func (s *MysqlStatDBs) GetSubordinateLag() {
+	if s.subordinateLagTable == "" {
+		s.Db.Log(errors.New("No subordinate lag table specified."))
 		return
 	}
-	res, err := s.Db.QueryReturnColumnDict(s.slaveLagQuery)
+	res, err := s.Db.QueryReturnColumnDict(s.subordinateLagQuery)
 	if err != nil {
 		s.Db.Log(err)
 		return
 	}
 	if len(res["TIMESTAMP"]) == 0 {
-		s.Db.Log("No timestamp in " + s.slaveLagTable + " found")
+		s.Db.Log("No timestamp in " + s.subordinateLagTable + " found")
 		return
 	}
 	timestamp := res["TIMESTAMP"][0]
@@ -376,15 +376,15 @@ func (s *MysqlStatDBs) GetSlaveLag() {
 		return
 	}
 	lag := now().Sub(ts)
-	s.Metrics.SlaveSecondsBehindMaster.Set(lag.Seconds())
+	s.Metrics.SubordinateSecondsBehindMain.Set(lag.Seconds())
 }
 
-// GetSlaveStats returns statistics regarding mysql replication
-func (s *MysqlStatDBs) GetSlaveStats() {
+// GetSubordinateStats returns statistics regarding mysql replication
+func (s *MysqlStatDBs) GetSubordinateStats() {
 	s.Metrics.ReplicationRunning.Set(float64(-1))
 	numBackups := float64(0)
 
-	res, err := s.Db.QueryReturnColumnDict(slaveBackupQuery)
+	res, err := s.Db.QueryReturnColumnDict(subordinateBackupQuery)
 	if err != nil {
 		s.Db.Log(err)
 	} else if len(res["count"]) > 0 {
@@ -393,55 +393,55 @@ func (s *MysqlStatDBs) GetSlaveStats() {
 			s.Db.Log(err)
 		} else {
 			if numBackups > 0 {
-				s.Metrics.SlaveSecondsBehindMaster.Set(float64(-1))
+				s.Metrics.SubordinateSecondsBehindMain.Set(float64(-1))
 				s.Metrics.ReplicationRunning.Set(float64(1))
 			}
 		}
 	}
-	res, err = s.Db.QueryReturnColumnDict(slaveQuery)
+	res, err = s.Db.QueryReturnColumnDict(subordinateQuery)
 	if err != nil {
 		s.Db.Log(err)
 		return
 	}
 
-	if len(res["Master_Host"]) > 0 {
-		s.MasterHostname = string(res["Master_Host"][0])
+	if len(res["Main_Host"]) > 0 {
+		s.MainHostname = string(res["Main_Host"][0])
 	}
 
-	if (len(res["Seconds_Behind_Master"]) > 0) && (string(res["Seconds_Behind_Master"][0]) != "") {
-		secondsBehindMaster, err := strconv.ParseFloat(string(res["Seconds_Behind_Master"][0]), 64)
+	if (len(res["Seconds_Behind_Main"]) > 0) && (string(res["Seconds_Behind_Main"][0]) != "") {
+		secondsBehindMain, err := strconv.ParseFloat(string(res["Seconds_Behind_Main"][0]), 64)
 		if err != nil {
 			s.Db.Log(err)
-			s.Metrics.SlaveSecondsBehindMaster.Set(float64(-1))
+			s.Metrics.SubordinateSecondsBehindMain.Set(float64(-1))
 			if numBackups == 0 {
 				s.Metrics.ReplicationRunning.Set(float64(-1))
 			}
 		} else {
-			s.Metrics.SlaveSecondsBehindMaster.Set(float64(secondsBehindMaster))
+			s.Metrics.SubordinateSecondsBehindMain.Set(float64(secondsBehindMain))
 			s.Metrics.ReplicationRunning.Set(float64(1))
 		}
 	}
-	if s.slaveLagTable != "" {
-		s.GetSlaveLag()
+	if s.subordinateLagTable != "" {
+		s.GetSubordinateLag()
 	}
 
-	relayMasterLogFile, _ := res["Relay_Master_Log_File"]
-	if len(relayMasterLogFile) > 0 {
-		tmp := strings.Split(string(relayMasterLogFile[0]), ".")
-		slaveSeqFile, err := strconv.ParseInt(tmp[len(tmp)-1], 10, 64)
+	relayMainLogFile, _ := res["Relay_Main_Log_File"]
+	if len(relayMainLogFile) > 0 {
+		tmp := strings.Split(string(relayMainLogFile[0]), ".")
+		subordinateSeqFile, err := strconv.ParseInt(tmp[len(tmp)-1], 10, 64)
 		if err != nil {
 			s.Db.Log(err)
 		}
-		s.Metrics.SlaveSeqFile.Set(float64(slaveSeqFile))
+		s.Metrics.SubordinateSeqFile.Set(float64(subordinateSeqFile))
 	}
 
-	if len(res["Exec_Master_Log_Pos"]) > 0 {
-		slavePosition, err := strconv.ParseFloat(string(res["Exec_Master_Log_Pos"][0]), 64)
+	if len(res["Exec_Main_Log_Pos"]) > 0 {
+		subordinatePosition, err := strconv.ParseFloat(string(res["Exec_Main_Log_Pos"][0]), 64)
 		if err != nil {
 			s.Db.Log(err)
 			return
 		}
-		s.Metrics.SlavePosition.Set(uint64(slavePosition))
+		s.Metrics.SubordinatePosition.Set(uint64(subordinatePosition))
 	}
 
 	if (len(res["Relay_Log_Space"]) > 0) && (string(res["Relay_Log_Space"][0]) != "") {
