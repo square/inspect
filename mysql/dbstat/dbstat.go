@@ -219,12 +219,8 @@ const (
            processlist.*
       FROM information_schema.processlist
      ORDER BY 1, time DESC;`
-	innodbQuery      = "SHOW GLOBAL VARIABLES LIKE 'innodb_log_file_size';"
-	securityQuery    = "SELECT COUNT(*) FROM mysql.user WHERE (password = '' OR password IS NULL) AND (x509_subject='' OR x509_subject IS NULL);"
-	slaveBackupQuery = `
-SELECT COUNT(*) as count
-  FROM information_schema.processlist
- WHERE user LIKE '%bkup%';`
+	innodbQuery        = "SHOW GLOBAL VARIABLES LIKE 'innodb_log_file_size';"
+	securityQuery      = "SELECT COUNT(*) FROM mysql.user WHERE (password = '' OR password IS NULL) AND (x509_subject='' OR x509_subject IS NULL);"
 	sslQuery           = "SELECT @@have_ssl;"
 	defaultMaxConns    = 5
 	readOnlyQuery      = "SELECT @@read_only;"
@@ -382,23 +378,8 @@ func (s *MysqlStatDBs) GetSlaveLag() {
 // GetSlaveStats returns statistics regarding mysql replication
 func (s *MysqlStatDBs) GetSlaveStats() {
 	s.Metrics.ReplicationRunning.Set(float64(-1))
-	numBackups := float64(0)
 
-	res, err := s.Db.QueryReturnColumnDict(slaveBackupQuery)
-	if err != nil {
-		s.Db.Log(err)
-	} else if len(res["count"]) > 0 {
-		numBackups, err = strconv.ParseFloat(string(res["count"][0]), 64)
-		if err != nil {
-			s.Db.Log(err)
-		} else {
-			if numBackups > 0 {
-				s.Metrics.SlaveSecondsBehindMaster.Set(float64(-1))
-				s.Metrics.ReplicationRunning.Set(float64(1))
-			}
-		}
-	}
-	res, err = s.Db.QueryReturnColumnDict(slaveQuery)
+	res, err := s.Db.QueryReturnColumnDict(slaveQuery)
 	if err != nil {
 		s.Db.Log(err)
 		return
@@ -409,18 +390,25 @@ func (s *MysqlStatDBs) GetSlaveStats() {
 	}
 
 	if (len(res["Seconds_Behind_Master"]) > 0) && (string(res["Seconds_Behind_Master"][0]) != "") {
-		secondsBehindMaster, err := strconv.ParseFloat(string(res["Seconds_Behind_Master"][0]), 64)
-		if err != nil {
-			s.Db.Log(err)
+		if string(res["Seconds_Behind_Master"][0]) == "NULL" {
 			s.Metrics.SlaveSecondsBehindMaster.Set(float64(-1))
-			if numBackups == 0 {
-				s.Metrics.ReplicationRunning.Set(float64(-1))
-			}
 		} else {
-			s.Metrics.SlaveSecondsBehindMaster.Set(float64(secondsBehindMaster))
-			s.Metrics.ReplicationRunning.Set(float64(1))
+			secondsBehindMaster, err := strconv.ParseFloat(string(res["Seconds_Behind_Master"][0]), 64)
+			if err != nil {
+				s.Db.Log(err)
+				s.Metrics.SlaveSecondsBehindMaster.Set(float64(-1))
+			} else {
+				s.Metrics.SlaveSecondsBehindMaster.Set(float64(secondsBehindMaster))
+			}
 		}
 	}
+
+	ioRunning := (len(res["Slave_IO_Running"]) > 0) && (string(res["Slave_IO_Running"][0]) == "Yes")
+	sqlRunning := (len(res["Slave_SQL_Running"]) > 0) && (string(res["Slave_SQL_Running"][0]) == "Yes")
+	if ioRunning && sqlRunning {
+		s.Metrics.ReplicationRunning.Set(float64(1))
+	}
+
 	if s.slaveLagTable != "" {
 		s.GetSlaveLag()
 	}

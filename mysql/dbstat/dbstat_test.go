@@ -368,9 +368,8 @@ func TestSlave1(t *testing.T) {
 			"Relay_Master_Log_File": []string{"some-name-bin.01345"},
 			"Exec_Master_Log_Pos":   []string{"7"},
 			"Relay_Log_Space":       []string{"2"},
-		},
-		slaveBackupQuery: map[string][]string{
-			"count": []string{"0"},
+			"Slave_IO_Running":      []string{"Yes"},
+			"Slave_SQL_Running":     []string{"Yes"},
 		},
 	}
 	expectedValues = map[interface{}]interface{}{
@@ -392,7 +391,7 @@ func TestSlave1(t *testing.T) {
 	}
 }
 
-// Test when slave is down and backup isn't running
+// Test when IO thread is down
 func TestSlave2(t *testing.T) {
 	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
@@ -404,9 +403,8 @@ func TestSlave2(t *testing.T) {
 			"Relay_Master_Log_File": []string{"some.name.bin.01345"},
 			"Exec_Master_Log_Pos":   []string{"7"},
 			"Relay_Log_Space":       []string{"0"},
-		},
-		slaveBackupQuery: map[string][]string{
-			"count": []string{"0"},
+			"Slave_IO_Running":      []string{"No"},
+			"Slave_SQL_Running":     []string{"Yes"},
 		},
 	}
 	expectedValues = map[interface{}]interface{}{
@@ -424,7 +422,7 @@ func TestSlave2(t *testing.T) {
 	}
 }
 
-// Test when slave is down and backup is running
+// Test when SQL thread is down
 func TestSlave3(t *testing.T) {
 	//initialize MysqlStatDBs
 	s := initMysqlStatDBs()
@@ -436,17 +434,66 @@ func TestSlave3(t *testing.T) {
 			"Relay_Master_Log_File": []string{"some.name.bin.01345"},
 			"Exec_Master_Log_Pos":   []string{"7"},
 			"Relay_Log_Space":       []string{"0"},
-		},
-		slaveBackupQuery: map[string][]string{
-			"count": []string{"1"},
+			"Slave_IO_Running":      []string{"Yes"},
+			"Slave_SQL_Running":     []string{"No"},
 		},
 	}
 	expectedValues = map[interface{}]interface{}{
 		s.Metrics.SlaveSecondsBehindMaster: float64(-1),
 		s.Metrics.SlaveSeqFile:             float64(1345),
 		s.Metrics.SlavePosition:            uint64(7),
-		s.Metrics.ReplicationRunning:       float64(1),
+		s.Metrics.ReplicationRunning:       float64(-1),
 		s.Metrics.RelayLogSpace:            float64(0),
+	}
+	s.Collect()
+	time.Sleep(time.Millisecond * 1000 * 1)
+	err := checkResults()
+	if err != "" {
+		t.Error(err)
+	}
+}
+
+// Test when SQL thread is down but seconds behind master != NULL
+func TestSlave4(t *testing.T) {
+	//initialize MysqlStatDBs
+	s := initMysqlStatDBs()
+	//set desired test output
+	testquerycol = map[string]map[string][]string{
+		//getSlaveStats()
+		slaveQuery: map[string][]string{
+			"Seconds_Behind_Master": []string{"0"},
+			"Slave_IO_Running":      []string{"Yes"},
+			"Slave_SQL_Running":     []string{"No"},
+		},
+	}
+	expectedValues = map[interface{}]interface{}{
+		s.Metrics.SlaveSecondsBehindMaster: float64(0),
+		s.Metrics.ReplicationRunning:       float64(-1),
+	}
+	s.Collect()
+	time.Sleep(time.Millisecond * 1000 * 1)
+	err := checkResults()
+	if err != "" {
+		t.Error(err)
+	}
+}
+
+// Test when IO thread is down but seconds behind master != NULL
+func TestSlave5(t *testing.T) {
+	//initialize MysqlStatDBs
+	s := initMysqlStatDBs()
+	//set desired test output
+	testquerycol = map[string]map[string][]string{
+		//getSlaveStats()
+		slaveQuery: map[string][]string{
+			"Seconds_Behind_Master": []string{"0"},
+			"Slave_IO_Running":      []string{"No"},
+			"Slave_SQL_Running":     []string{"Yes"},
+		},
+	}
+	expectedValues = map[interface{}]interface{}{
+		s.Metrics.SlaveSecondsBehindMaster: float64(0),
+		s.Metrics.ReplicationRunning:       float64(-1),
 	}
 	s.Collect()
 	time.Sleep(time.Millisecond * 1000 * 1)
