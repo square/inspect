@@ -508,9 +508,9 @@ func TestSlaveLagTable(t *testing.T) {
 	s := initMysqlStatDBs()
 
 	s.slaveLagTable = "test-dbadmin-table"
-	slaveLagQuery = "SELECT max(ts) AS TIMESTAMP from test-dbadmin-table"
+	s.slaveLagQuery = "SELECT max(ts) AS TIMESTAMP from test-dbadmin-table"
 	testquerycol = map[string]map[string][]string{
-		slaveLagQuery: map[string][]string{
+		s.slaveLagQuery: map[string][]string{
 			"TIMESTAMP": []string{"2016-05-20 15:21:46.00000"},
 		},
 	}

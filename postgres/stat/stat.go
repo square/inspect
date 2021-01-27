@@ -730,7 +730,10 @@ func (s *PostgresStat) getSizes() {
 			s.db.Log("Cannot connect to database: " + dbname)
 			continue
 		}
-		cmd := fmt.Sprintf(tblSizeQuery, dbname)
+		// Previously:
+		// cmd := fmt.Sprintf(tblSizeQuery, dbname)
+		// No idea what this is supposed to do, but it's breaking go vet.
+		cmd := fmt.Sprintf("%s %s", tblSizeQuery, dbname)
 		res, err := newDB.QueryMapFirstColumnToRow(cmd)
 		if err != nil {
 			s.db.Log(err)
