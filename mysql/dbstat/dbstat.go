@@ -866,7 +866,7 @@ func (s *MysqlStatDBs) GetInnodbStats() {
 		"pages_made_young":            s.Metrics.PagesMadeYoung,
 		"pages_read":                  s.Metrics.PagesRead,
 		"pending_chkp_writes":         s.Metrics.InnodbPendingCheckpointWrites,
-		"pending_log_writes":          s.Metrics.InnodbPendingLogWrites,
+		"pending_log_flushes":         s.Metrics.InnodbPendingLogWrites,
 		"pending_reads":               s.Metrics.PendingReads,
 		"pending_writes_lru":          s.Metrics.PendingWritesLRU,
 		"reads_per_s":                 s.Metrics.ReadsPerSec,
