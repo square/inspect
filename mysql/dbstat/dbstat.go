@@ -220,7 +220,7 @@ const (
       FROM information_schema.processlist
      ORDER BY 1, time DESC;`
 	innodbQuery        = "SHOW GLOBAL VARIABLES LIKE 'innodb_log_file_size';"
-	securityQuery      = "SELECT COUNT(*) FROM mysql.user WHERE (password = '' OR password IS NULL) AND (x509_subject='' OR x509_subject IS NULL);"
+	securityQuery      = "SELECT COUNT(*) FROM mysql.user WHERE (authentication_string = '' OR authentication_string IS NULL) AND (x509_subject='' OR x509_subject IS NULL);"
 	sslQuery           = "SELECT @@have_ssl;"
 	defaultMaxConns    = 5
 	readOnlyQuery      = "SELECT @@read_only;"
