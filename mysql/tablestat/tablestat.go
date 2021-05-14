@@ -36,6 +36,41 @@ SELECT table_schema AS db, table_name AS tbl,
   FROM INFORMATION_SCHEMA.TABLE_STATISTICS
  WHERE rows_read > 0;`
 	defaultMaxConns = 5
+	autoincQuery    = `SELECT * FROM (select
+    table_schema,
+    table_name,
+    column_name,
+    proper_type,
+    auto_increment,
+    max_size,
+    (((max_size - auto_increment) / max_size ) * 100) AS pct_diff
+  from
+    INFORMATION_SCHEMA.columns
+    natural join INFORMATION_SCHEMA.tables
+    join (
+      select 'tinyint' as proper_type, 127 as max_size
+      union all
+      select 'tinyint unsigned' as proper_type, 255 as max_size
+      union all
+      select 'smallint' as proper_type, 32767 as max_size
+      union all
+      select 'smallint unsigned' as proper_type, 65535 as max_size
+      union all
+      select 'mediumint' as proper_type, 8388607 as max_size
+      union all
+      select 'mediumint unsigned' as proper_type, 16777215 as max_size
+      union all
+      select 'int' as proper_type, 2147483647 as max_size
+      union all
+      select 'int unsigned' as proper_type, 4294967295 as max_size
+      union all
+      select 'bigint' as proper_type, 9223372036854775807 as max_size
+      union all
+      select 'bigint unsigned' as proper_type, 18446744073709551615 as max_size
+    ) maxes ON (proper_type = CONCAT(LEFT(column_type, GREATEST(0, LOCATE('(', column_type)-1)), RIGHT(column_type, LENGTH(column_type)-LOCATE(')', column_type))))
+  where
+    table_schema NOT IN ('common_schema', 'mysql', '_pending_drops')
+    AND extra like '%auto_increment%') AS a;`
 )
 
 // MysqlStatTables - main struct that contains connection to database, metric context, and map to database stats struct
@@ -57,6 +92,8 @@ type MysqlStatPerTable struct {
 	RowsRead            *metrics.Counter
 	RowsChanged         *metrics.Counter
 	RowsChangedXIndexes *metrics.Counter
+	Autoincrement       *metrics.Counter
+	AutoincPercentLeft  *metrics.Gauge
 }
 
 // MysqlStatPerDB - metrics for each database
@@ -105,6 +142,7 @@ func (s *MysqlStatTables) Collect() {
 		s.GetDBSizes,
 		s.GetTableSizes,
 		s.GetTableStatistics,
+		s.GetColumnStats,
 	}
 	util.CollectInParallel(queryFuncList)
 }
@@ -261,6 +299,31 @@ func (s *MysqlStatTables) GetTableStatistics() {
 	return
 }
 
+func (s *MysqlStatTables) GetColumnStats() {
+	res, err := s.Db.QueryReturnColumnDict(autoincQuery)
+	if len(res) == 0 || err != nil {
+		s.Db.Log(err)
+		return
+	}
+	for i, tblname := range res["table_name"] {
+		dbname := res["table_schema"][i]
+		autoincrement, err := strconv.ParseInt(res["auto_increment"][i], 10, 64)
+		if err != nil {
+			s.Db.Log(err)
+		}
+		pctdiff, err := strconv.ParseFloat(res["pct_diff"][i], 64)
+		if err != nil {
+			s.Db.Log(err)
+		}
+		s.checkDB(dbname)
+		s.checkTable(dbname, tblname)
+		s.nLock.Lock()
+		s.DBs[dbname].Tables[tblname].Autoincrement.Set(uint64(autoincrement))
+		s.DBs[dbname].Tables[tblname].AutoincPercentLeft.Set(float64(pctdiff))
+		s.nLock.Unlock()
+	}
+}
+
 // FormatGraphite writes metrics in the form "metric_name metric_value"
 // to the input writer
 func (s *MysqlStatTables) FormatGraphite(w io.Writer) error {
@@ -280,6 +343,10 @@ func (s *MysqlStatTables) FormatGraphite(w io.Writer) error {
 				strconv.FormatUint(tbl.RowsChanged.Get(), 10))
 			fmt.Fprintln(w, dbname+"."+tblname+".RowsChangedXIndexes "+
 				strconv.FormatUint(tbl.RowsChangedXIndexes.Get(), 10))
+			fmt.Fprintln(w, dbname+"."+tblname+".Autoincrement "+
+				strconv.FormatUint(tbl.Autoincrement.Get(), 10))
+			fmt.Fprintln(w, dbname+"."+tblname+".AutoincPercentLeft "+
+				strconv.FormatFloat(tbl.AutoincPercentLeft.Get(), 'f', 5, 64))
 		}
 	}
 	return nil
