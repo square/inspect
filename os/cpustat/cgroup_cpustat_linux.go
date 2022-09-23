@@ -111,16 +111,18 @@ type PerCgroupStat struct {
 	TotalCount     *metrics.Gauge
 	ThrottleCount  *metrics.Gauge
 	//
-	m      *metrics.MetricContext
-	path   string
-	prefix string
+	m          *metrics.MetricContext
+	path       string
+	mountpoint string
+	prefix     string
 }
 
 // NewPerCgroupStat registers with metricscontext for a particular cgroup
-func NewPerCgroupStat(m *metrics.MetricContext, path string, mp string) *PerCgroupStat {
+func NewPerCgroupStat(m *metrics.MetricContext, path, mp string) *PerCgroupStat {
 	c := new(PerCgroupStat)
 	c.m = m
 	c.path = path
+	c.mountpoint = mp
 	// initialize all metrics and register them
 	// XXX: Handle errors
 	rel, _ := filepath.Rel(mp, path)
@@ -203,11 +205,27 @@ func (s *PerCgroupStat) Collect() {
 	s.CfsPeriodUs.Set(
 		float64(misc.ReadUintFromFile(
 			s.path + "/" + "cpu.cfs_period_us")))
-	// negative values of quota indicate no quota.
-	// it is not possible for this variable to be zero
-	s.CfsQuotaUs.Set(
-		float64(misc.ReadUintFromFile(
-			s.path + "/" + "cpu.cfs_quota_us")))
+
+	// Find the quota for the cgroup. If there is no limit (the value is
+	// -1), we need to check the parent directory, recursively, until we
+	// reach the root directory which is s.mountpoint.
+	var quota float64
+	path := s.path
+	for {
+		quota = float64(misc.ReadUintFromFile(
+			path + "/" + "cpu.cfs_quota_us"))
+		if quota > 0 {
+			break
+		}
+
+		if path == s.mountpoint {
+			quota = -1
+			break
+		}
+
+		path = filepath.Dir(path)
+	}
+	s.CfsQuotaUs.Set(quota)
 
 	// Calculate approximate cumulative CPU usage for all
 	// processes within this cgroup by calculating difference
