@@ -53,5 +53,19 @@ upstream	github.com/square/inspect.git (push)
   2. go test ./...
   3. $GOPATH/bin/golint ./...
 
+##### Testing
+To run the linux tests in this repo on a non-linux machine, use the TestLinuxDockerfile in the root of the repo.
+```
+docker build -q -f TestLinuxDockerfile .
+
+# record the image id outputted from the command ^
+
+docker run --rm -it --entrypoint bash ${the_full_image_id_from_above}
+
+# Once attached to the docker container, run the tests. E.g.
+cd os/cpustat
+go test ./...
+```
+
 #### Todo
 * metriccheck uses some darkmagic and uses golang/x/tools APIs which tend to break API compat often. Need to fix it.
